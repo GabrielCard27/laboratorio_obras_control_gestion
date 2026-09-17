@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis Exploratorio de Datos — Alumbrado Público RP16</title>
+<style>
+:root{
+  --bg:#F4F6F8;
+  --surface:#FFFFFF;
+  --header:#16324F;
+  --text:#263238;
+  --text-sec:#60717F;
+  --border:#DCE3E8;
+
+  --eda:#6C5CE7;
+  --trend:#2878C8;
+  --productividad:#16A6A3;
+  --costos:#24506B;
+
+  --atencion:#E9A23B;
+  --critico:#D9534F;
+  --favorable:#3E9B6D;
+  --stock-c:#8FA6B3;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+*{box-sizing:border-box;}
+html,body{min-height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;}
+h1,h2,h3{margin:0;color:var(--header);}
+p{margin:0;}
+
+.page{min-height:100vh;display:flex;flex-direction:column;padding:28px clamp(16px,3vw,40px) 40px;gap:22px;max-width:1680px;margin:0 auto;}
+
+.top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;padding:4px 2px 2px;}
+.top h1{font-size:clamp(24px,3vw,34px);font-weight:750;line-height:1.12;}
+.top h1 span{color:var(--eda);}
+.top .sub{color:var(--text-sec);font-size:clamp(13px,1.15vw,15px);margin-top:8px;}
+.top .obra{text-align:right;font-size:12px;line-height:1.5;color:var(--text-sec);padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+.top .obra b{display:block;color:var(--header);font-size:14px;font-weight:650;margin-bottom:2px;}
+
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:stretch;}
+@media(max-width:900px){.mini-interp{grid-template-columns:1fr!important}}
+@media(max-width:760px){.page{padding:16px 13px 28px;gap:16px}.top{align-items:flex-start}.top .obra{text-align:left;width:100%}.grid{grid-template-columns:1fr;gap:16px}.card{padding:15px 15px 14px}.chart-wrap{height:230px!important}.card:nth-child(5) .chart-wrap{height:270px!important}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 22px 18px;display:flex;flex-direction:column;min-height:0;min-width:0;box-shadow:0 3px 14px rgba(22,50,79,.055);transition:box-shadow .2s ease,border-color .2s ease,transform .2s ease}.card:hover{border-color:#BFCBD4;box-shadow:0 7px 22px rgba(22,50,79,.09);transform:translateY(-1px)}
+.card .chead{display:flex;align-items:center;gap:11px;}
+.badge{flex:none;width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#fff;}
+.chead .ctitle h3{font-size:17px;line-height:1.2;font-weight:650;}
+.chead .ctitle .ctype{font-size:11.5px;color:var(--text-sec);margin-top:3px;}
+.chart-wrap{width:100%;height:clamp(230px,23vw,300px);margin-top:16px;overflow:hidden}.card:nth-child(5) .chart-wrap{height:clamp(260px,25vw,330px);overflow-x:auto;overflow-y:hidden;}
+.chart-wrap svg{width:100%;height:100%;display:block;}
+.caption{font-size:12px;color:var(--text-sec);text-align:center;margin-top:14px;padding:7px 10px;background:var(--bg);border-radius:6px;}
+.caption b{color:var(--header);font-weight:600;}
+.mini-interp{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.mini-interp .iline{font-size:11.5px;line-height:1.55;color:var(--text);padding-left:10px;border-left:2px solid var(--border);}
+.mini-interp .iline b.itag{display:block;color:var(--header);font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
+</style>
+</head>
+<body>
+<div id="app" class="page"></div>
+
+<script>
+/* =========================================================
+   DATA + ANALYTICS + CHARTS — idénticos al Laboratorio de Control de Gestión
+   (mismo dataset y las mismas funciones de cálculo/gráficos, sin cambios)
+   ========================================================= */
+const MESES = [
+  {id:'2026-01', label:'Ene 26'}, {id:'2026-02', label:'Feb 26'},
+  {id:'2026-03', label:'Mar 26'}, {id:'2026-04', label:'Abr 26'},
+  {id:'2026-05', label:'May 26'}, {id:'2026-06', label:'Jun 26'},
+  {id:'2026-07', label:'Jul 26'}
+];
+
+const RUBROS = [
+  {id:'excavacion', nombre:'Excavación', material:'Excavación de zanja', unidad:'m³'},
+  {id:'hormigon', nombre:'Hormigón', material:'Hormigón H21 (bases)', unidad:'m³'},
+  {id:'canalizaciones', nombre:'Canalizaciones', material:'Caño PVC/PEAD', unidad:'m'},
+  {id:'columnas', nombre:'Columnas', material:'Columnas metálicas', unidad:'u'},
+  {id:'cableado', nombre:'Cableado', material:'Cable subterráneo', unidad:'m'},
+  {id:'tableros', nombre:'Tableros Eléctricos', material:'Tableros de comando', unidad:'u'},
+  {id:'luminarias', nombre:'Luminarias LED', material:'Luminarias LED', unidad:'u'},
+  {id:'manoobra', nombre:'Mano de Obra', material:'Cuadrillas propias', unidad:'HH'},
+  {id:'equipos', nombre:'Equipos', material:'Equipo (grúa/canasto)', unidad:'h'},
+  {id:'senalizacion', nombre:'Señalización y Seguridad', material:'Señalización vial', unidad:'u'}
+];
+
+// valores mensuales por rubro (índice 0..6 = Ene..Jul 2026). avance = % físico del MES (incremento, NO acumulado).
+// El acumulado se calcula en tiempo de ejecución (ver aggregateMonthly) a partir de estos incrementos.
+const RAW = {
+  excavacion: {presupuesto:[2800,3200,2000,0,0,0,0],
+            costo:      [3220,2880,2360,0,0,0,0],
+            horas:      [142,211,88,0,0,0,0],
+            consumo:    [928.2,1019.2,656.5,0,0,0,0],
+            stock:      [390,176,90,233,376,519,662],
+            certificacion:[3024,2816,2240,0,0,0,0],
+            erogaciones:[2194,3106,2301,1355,0,0,0],
+            avance:     [35,40,25,0,0,0,0]},
+  hormigon: {presupuesto:[2000,3000,3000,2000,0,0,0],
+            costo:      [1800,3540,2550,2400,0,0,0],
+            horas:      [120,120,177,109,0,0,0],
+            consumo:    [94.1,145.4,148.3,93.1,0,0,0],
+            stock:      [99,75,49,43,70,96,122],
+            certificacion:[1760,3360,2760,2200,0,0,0],
+            erogaciones:[1455,2232,3399,2709,1089,0,0],
+            avance:     [20,30,30,20,0,0,0]},
+  canalizaciones: {presupuesto:[0,2800,4900,4200,2100,0,0],
+            costo:      [0,2380,5880,3696,2310,0,0],
+            horas:      [0,149,209,185,128,0,0],
+            consumo:    [0,1194.8,1969.1,1809.6,835.2,0,0],
+            stock:      [1595,1496,1126,811,838,1157,1476],
+            certificacion:[0,2576,5390,3570,1890,0,0],
+            erogaciones:[0,1275,4150,4114,3152,967,0],
+            avance:     [0,20,35,30,15,0,0]},
+  columnas: {presupuesto:[0,0,5200,9100,7800,3900,0],
+            costo:      [0,0,4576,10010,8970,3510,0],
+            horas:      [0,0,177,481,339,187,0],
+            consumo:    [0,0,37.4,60.5,55.1,26.5,0],
+            stock:      [50,60,57,45,36,37,46],
+            certificacion:[0,0,4420,8190,8424,3432,0],
+            erogaciones:[0,0,1790,6850,7715,6548,1699],
+            avance:     [0,0,20,35,30,15,0]},
+  cableado: {presupuesto:[0,0,0,6000,9000,9000,6000],
+            costo:      [0,0,0,6900,8100,10620,5100],
+            horas:      [0,0,0,241,484,274,269],
+            consumo:    [0,0,0,1876.8,8384.9,2787.6,1895.2],
+            stock:      [2530,3036,3542,3391,962,493,335],
+            certificacion:[0,0,0,6480,7920,10080,5520],
+            erogaciones:[0,0,0,2712,7556,8003,8831],
+            avance:     [0,0,0,20,30,30,20]},
+  tableros: {presupuesto:[0,0,0,0,4000,6400,5600],
+            costo:      [0,0,0,0,4720,5440,6720],
+            horas:      [0,0,0,0,159,317,223],
+            consumo:    [0,0,0,0,3.5,5.8,4.8],
+            stock:      [4,5,5,6,6,4,3],
+            certificacion:[0,0,0,0,4480,5888,6160],
+            erogaciones:[0,0,0,0,1814,5625,6491],
+            avance:     [0,0,0,0,25,40,35]},
+  luminarias: {presupuesto:[0,0,0,1700,5100,11900,15300],
+            costo:      [0,0,0,2006,4335,34272,13464],
+            horas:      [0,0,0,47,213,339,390],
+            consumo:    [0,0,0,17.2,52.5,115.4,159.1],
+            stock:      [94,112,131,144,144,122,85],
+            certificacion:[0,0,0,1904,4692,13745,13005],
+            erogaciones:[0,0,0,771,3474,9149,11747],
+            avance:     [0,0,0,5,15,35,45]},
+  manoobra: {presupuesto:[1600,2400,3200,3600,3600,3200,2400],
+            costo:      [1840,2160,3776,3060,4320,2816,2640],
+            horas:      [132,259,230,440,363,245,248],
+            consumo:    [132,259,230,440,363,245,248],
+            stock:      [0,0,0,0,0,0,0],
+            certificacion:[1728,2112,3584,3312,3960,2720,2160],
+            erogaciones:[1253,2015,2497,3808,3892,3062,2764],
+            avance:     [8,12,16,18,18,16,12]},
+  equipos: {presupuesto:[1200,1800,1200,2400,1800,2400,1200],
+            costo:      [900,2430,840,3000,1404,2880,1560],
+            horas:      [36,36,35,66,45,69,28],
+            consumo:    [94.1,145.4,98.9,186.2,149.8,184.3,97.9],
+            stock:      [231,233,251,239,239,227,246],
+            certificacion:[1056,2016,1104,2640,1530,2160,1296],
+            erogaciones:[873,1339,1766,1939,1926,2031,1647],
+            avance:     [10,15,10,20,15,20,10]},
+  senalizacion: {presupuesto:[480,600,600,720,900,1200,1500],
+            costo:      [566,510,720,634,990,1380,1350],
+            horas:      [19,35,29,35,61,55,90],
+            consumo:    [4.8,6.2,5.8,7.5,8.6,12.2,14.7],
+            stock:      [15,16,17,18,18,17,15],
+            certificacion:[538,552,660,612,810,1296,1320],
+            erogaciones:[378,599,649,575,785,957,1385],
+            avance:     [8,10,10,12,15,20,25]}
+};
+
+// aplanar a registros
+const RECORDS = [];
+RUBROS.forEach(r=>{
+  MESES.forEach((m,i)=>{
+    RECORDS.push({
+      obra:'Alumbrado Público RP16', fecha:m.id, mesLabel:m.label, mesIdx:i,
+      rubro:r.id, rubroNombre:r.nombre, material:r.material, unidad:r.unidad,
+      presupuesto:RAW[r.id].presupuesto[i], costo:RAW[r.id].costo[i],
+      horas:RAW[r.id].horas[i], consumo:RAW[r.id].consumo[i], stock:RAW[r.id].stock[i],
+      certificacion:RAW[r.id].certificacion[i], erogaciones:RAW[r.id].erogaciones[i],
+      avance:RAW[r.id].avance[i]
+    });
+  });
+});
+
+const VARIABLES = [
+  {id:'costo', label:'Costo', unidad:'miles $', color:'var(--costos)'},
+  {id:'presupuesto', label:'Presupuesto Ejecutado', unidad:'miles $', color:'#3E6E8E'},
+  {id:'avance', label:'Avance Físico', unidad:'%', color:'var(--trend)'},
+  {id:'certificacion', label:'Certificación', unidad:'miles $', color:'var(--favorable)'},
+  {id:'horas', label:'Horas Hombre', unidad:'HH', color:'var(--productividad)'},
+  {id:'consumo', label:'Consumo de Materiales', unidad:'según rubro', color:'var(--eda)'},
+  {id:'erogaciones', label:'Erogaciones', unidad:'miles $', color:'var(--text-sec)'},
+  {id:'stock', label:'Stock Disponible', unidad:'según rubro', color:'var(--stock-c)'},
+  {id:'precioUnitario', label:'Precio Unitario', unidad:'miles $ / unidad', color:'var(--atencion)'},
+  {id:'desvio', label:'Desvío %', unidad:'% vs. presupuesto', color:'var(--critico)'}
+];
+function varDef(id){ return VARIABLES.find(v=>v.id===id); }
+function getValue(rec, varId){
+  if(varId==='precioUnitario') return rec.consumo>0 ? rec.costo/rec.consumo : null;
+  if(varId==='desvio') return rec.presupuesto>0 ? (rec.costo-rec.presupuesto)/rec.presupuesto*100 : null;
+  return rec[varId];
+}
+function activeVal(v, varId){ return varId==='desvio' ? (v!==null && !isNaN(v)) : (v!==null && v>0); }
+
+/* =========================================================
+   ANALYTICS
+   ========================================================= */
+const A = {
+  mean(arr){ if(!arr.length) return 0; return arr.reduce((a,b)=>a+b,0)/arr.length; },
+  median(arr){ if(!arr.length) return 0; const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2);
+    return s.length%2 ? s[m] : (s[m-1]+s[m])/2; },
+  std(arr){ if(arr.length<2) return 0; const m=A.mean(arr); const v=arr.reduce((a,b)=>a+(b-m)**2,0)/(arr.length-1);
+    return Math.sqrt(v); },
+  quartiles(arr){
+    const s=[...arr].sort((a,b)=>a-b); const n=s.length; if(!n) return {q1:0,q2:0,q3:0,iqr:0,min:0,max:0,low:0,high:0};
+    const q=(p)=>{ const idx=(n-1)*p; const lo=Math.floor(idx), hi=Math.ceil(idx); if(lo===hi) return s[lo];
+      return s[lo]+(s[hi]-s[lo])*(idx-lo); };
+    const q1=q(0.25), q2=q(0.5), q3=q(0.75), iqr=q3-q1;
+    return {q1,q2,q3,iqr,min:s[0],max:s[n-1],low:q1-1.5*iqr, high:q3+1.5*iqr};
+  },
+  outliers(arr){
+    const {low,high,iqr} = A.quartiles(arr);
+    return arr.map((v,i)=>({i, v, flag: v<low||v>high, extreme: iqr>0 && (v < low-1.5*iqr || v > high+1.5*iqr)}));
+  },
+  pearson(x,y){
+    const n=x.length; if(n<3) return 0;
+    const mx=A.mean(x), my=A.mean(y);
+    let num=0,dx=0,dy=0;
+    for(let i=0;i<n;i++){ num+=(x[i]-mx)*(y[i]-my); dx+=(x[i]-mx)**2; dy+=(y[i]-my)**2; }
+    if(dx===0||dy===0) return 0;
+    return num/Math.sqrt(dx*dy);
+  },
+  regression(x,y){
+    const n=x.length; const mx=A.mean(x), my=A.mean(y);
+    let num=0, den=0;
+    for(let i=0;i<n;i++){ num+=(x[i]-mx)*(y[i]-my); den+=(x[i]-mx)**2; }
+    const slope = den===0?0:num/den;
+    const intercept = my - slope*mx;
+    return {slope, intercept, r:A.pearson(x,y)};
+  },
+  corrStrengthLabel(r){
+    const a=Math.abs(r);
+    if(a<0.3) return 'relación lineal débil';
+    if(a<0.6) return 'relación lineal moderada';
+    return 'relación lineal fuerte';
+  }
+};
+
+/* =========================================================
+   CHARTS
+   ========================================================= */
+function fmt(n){ if(n===null||n===undefined||isNaN(n)) return '—';
+  return new Intl.NumberFormat('es-AR',{maximumFractionDigits: Math.abs(n)<10? 1:0}).format(n); }
+
+const CH = {
+  histogram(values, colorVar){
+    const W=640,H=340,M={t:18,r:18,b:42,l:56};
+    const bins=8;
+    const min=Math.min(...values), max=Math.max(...values);
+    const bw=(max-min)/bins || 1;
+    const counts=new Array(bins).fill(0);
+    values.forEach(v=>{ let idx=Math.floor((v-min)/bw); if(idx>=bins) idx=bins-1; if(idx<0) idx=0; counts[idx]++; });
+    const maxC=Math.max(...counts,1);
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    const slot=innerW/bins;
+    const barW=slot-6;
+    const yFor=c=> M.t+innerH-(c/maxC)*innerH;
+    let bars='', labels='';
+    counts.forEach((c,i)=>{
+      const x=M.l+i*slot+3;
+      const y=yFor(c);
+      bars+=`<rect x="${x}" y="${y}" width="${barW}" height="${(M.t+innerH)-y}" fill="${colorVar}" opacity="0.82" rx="2"/>`;
+      labels+=`<text x="${x+barW/2}" y="${M.t+innerH+16}" font-size="12" text-anchor="middle" fill="var(--text-sec)">${fmt(min+i*bw)}</text>`;
+    });
+    let pts=counts.map((c,i)=> `${M.l+i*slot+3+barW/2},${yFor(c)}`).join(' ');
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">
+      <line x1="${M.l}" y1="${M.t+innerH}" x2="${W-M.r}" y2="${M.t+innerH}" stroke="var(--border)"/>
+      ${bars}
+      <polyline points="${pts}" fill="none" stroke="var(--header)" stroke-width="1.8"/>
+      ${labels}
+    </svg>`;
+  },
+
+  lineChart(seriesArr, categories, pct){
+    const W=680,H=340,M={t:20,r:18,b:44,l:62};
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    let allVals=[];
+    seriesArr.forEach(s=> allVals=allVals.concat(s.values.filter(v=>v!==null&&!isNaN(v))));
+    let min= pct?0:Math.min(0,...allVals), max = pct?100:Math.max(...allVals,1);
+    if(max===min) max=min+1;
+    const n=categories.length;
+    const xFor=i=> M.l + (n<=1?0:(i/(n-1))*innerW);
+    const yFor=v=> M.t + innerH - ((v-min)/(max-min))*innerH;
+    let grid='', ticks=5;
+    for(let t=0;t<=ticks;t++){
+      const v=min+(max-min)*t/ticks;
+      const y=yFor(v);
+      grid+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="var(--border)" stroke-dasharray="2,3"/>
+             <text x="${M.l-8}" y="${y+3}" font-size="12" text-anchor="end" fill="var(--text-sec)">${fmt(v)}${pct?'%':''}</text>`;
+    }
+    let xlabels=categories.map((c,i)=>`<text x="${xFor(i)}" y="${M.t+innerH+18}" font-size="12" text-anchor="middle" fill="var(--text-sec)">${c}</text>`).join('');
+    let lines='';
+    seriesArr.forEach(s=>{
+      const pts = s.values.map((v,i)=> (v===null||isNaN(v))? null : `${xFor(i)},${yFor(v)}`).filter(Boolean).join(' ');
+      lines+=`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2.2"/>`;
+      s.values.forEach((v,i)=>{ if(v!==null && !isNaN(v)) lines+=`<circle cx="${xFor(i)}" cy="${yFor(v)}" r="2.6" fill="${s.color}"/>`; });
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${grid}${lines}${xlabels}</svg>`;
+  },
+
+  // variante para el panel de outliers: colorea el punto marcado por IQR en vez de usar el color de la serie
+  flaggedLine(values, categories, color){
+    const flags = A.outliers(values);
+    const W=680,H=340,M={t:20,r:18,b:44,l:62};
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    const min=Math.min(0,...values), max=Math.max(...values,1);
+    const n=categories.length;
+    const xFor=i=> M.l + (n<=1?0:(i/(n-1))*innerW);
+    const yFor=v=> M.t + innerH - ((v-min)/((max-min)||1))*innerH;
+    let grid='';
+    for(let t=0;t<=4;t++){ const v=min+(max-min)*t/4; const y=yFor(v);
+      grid+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="var(--border)" stroke-dasharray="2,3"/>
+             <text x="${M.l-8}" y="${y+3}" font-size="12" text-anchor="end" fill="var(--text-sec)">${fmt(v)}</text>`; }
+    let xlabels=categories.map((c,i)=>`<text x="${xFor(i)}" y="${M.t+innerH+18}" font-size="12" text-anchor="middle" fill="var(--text-sec)">${c}</text>`).join('');
+    const pts=values.map((v,i)=>`${xFor(i)},${yFor(v)}`).join(' ');
+    let dots='';
+    values.forEach((v,i)=>{
+      const f=flags[i];
+      const c = f.flag ? (f.extreme?'var(--critico)':'var(--atencion)') : color;
+      const r = f.flag ? 5.5 : 2.8;
+      dots+=`<circle cx="${xFor(i)}" cy="${yFor(v)}" r="${r}" fill="${c}"/>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">
+      ${grid}<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2"/>${dots}${xlabels}
+    </svg>`;
+  },
+
+  scatter(x,y,xLabel,yLabel,color){
+    const W=640,H=340,M={t:18,r:18,b:46,l:58};
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    const xmin=Math.min(...x), xmax=Math.max(...x);
+    const ymin=Math.min(...y), ymax=Math.max(...y);
+    const xr = xmax-xmin || 1, yr = ymax-ymin || 1;
+    const xFor=v=> M.l + ((v-xmin)/xr)*innerW;
+    const yFor=v=> M.t + innerH - ((v-ymin)/yr)*innerH;
+    let pts=''; for(let i=0;i<x.length;i++){ pts+=`<circle cx="${xFor(x[i])}" cy="${yFor(y[i])}" r="4" fill="${color}" opacity="0.75"/>`; }
+    const reg = A.regression(x,y);
+    const x1=xmin, x2=xmax;
+    const y1=reg.intercept+reg.slope*x1, y2=reg.intercept+reg.slope*x2;
+    const trendLine = `<line x1="${xFor(x1)}" y1="${yFor(y1)}" x2="${xFor(x2)}" y2="${yFor(y2)}" stroke="var(--header)" stroke-width="1.6" stroke-dasharray="5,3"/>`;
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">
+      <line x1="${M.l}" y1="${M.t+innerH}" x2="${W-M.r}" y2="${M.t+innerH}" stroke="var(--border)"/>
+      <line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+innerH}" stroke="var(--border)"/>
+      <text x="${M.l+innerW/2}" y="${H-6}" font-size="12.5" text-anchor="middle" fill="var(--text-sec)">${xLabel}</text>
+      <text x="12" y="${M.t+innerH/2}" font-size="12.5" text-anchor="middle" fill="var(--text-sec)" transform="rotate(-90 12 ${M.t+innerH/2})">${yLabel}</text>
+      ${pts}${trendLine}
+    </svg>`;
+  },
+
+  corrMatrix(vars, matrix){
+    const cell=58, pad={t:74,l:122};
+    const W=pad.l+cell*vars.length+10, H=pad.t+cell*vars.length+10;
+    let cells='', colLabels='', rowLabels='';
+    vars.forEach((v,ci)=>{
+      colLabels+=`<text x="${pad.l+ci*cell+cell/2}" y="${pad.t-8}" font-size="12.5" text-anchor="start" fill="var(--text-sec)" transform="rotate(-38 ${pad.l+ci*cell+cell/2} ${pad.t-8})">${v.label}</text>`;
+      rowLabels+=`<text x="${pad.l-8}" y="${pad.t+ci*cell+cell/2+4}" font-size="12.5" text-anchor="end" fill="var(--text-sec)">${v.label}</text>`;
+    });
+    vars.forEach((rv,ri)=>{
+      vars.forEach((cv,ci)=>{
+        const r = matrix[ri][ci];
+        const isPos = r>=0;
+        const inten = Math.min(Math.abs(r),1);
+        const base = isPos ? '36,80,107' : '217,83,79';
+        const bg = `rgba(${base},${(0.08+inten*0.75).toFixed(2)})`;
+        const txtColor = inten>0.55 ? '#fff' : 'var(--text)';
+        cells+=`<g>
+          <rect x="${pad.l+ci*cell}" y="${pad.t+ri*cell}" width="${cell-2}" height="${cell-2}" fill="${bg}" rx="2"/>
+          <text x="${pad.l+ci*cell+cell/2}" y="${pad.t+ri*cell+cell/2+4}" font-size="12.5" text-anchor="middle" fill="${txtColor}" font-family="var(--font-mono)">${r.toFixed(2)}</text>
+        </g>`;
+      });
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet" style="min-width:${W}px">${colLabels}${rowLabels}${cells}</svg>`;
+  },
+
+  boxplot(groups, color){
+    const W=680,H=350,M={t:18,r:18,b:64,l:62};
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    let allVals=[]; groups.forEach(g=>allVals=allVals.concat(g.values));
+    const min=Math.min(...allVals), max=Math.max(...allVals);
+    const pad=(max-min)*0.08 || 1;
+    const dmin= min>=0 ? Math.max(0,min-pad) : min-pad, dmax=max+pad;
+    const yFor=v=> M.t + innerH - ((v-dmin)/(dmax-dmin))*innerH;
+    const slot=innerW/groups.length;
+    let content='', labels='';
+    groups.forEach((g,i)=>{
+      const q=A.quartiles(g.values);
+      const cx=M.l+slot*i+slot/2;
+      const boxW=Math.min(slot*0.42,60);
+      const withinMax = Math.max(...g.values.filter(v=>v<=q.high));
+      const withinMin = Math.min(...g.values.filter(v=>v>=q.low));
+      content+=`<line x1="${cx}" y1="${yFor(withinMax)}" x2="${cx}" y2="${yFor(q.q3)}" stroke="var(--text-sec)"/>
+        <line x1="${cx}" y1="${yFor(withinMin)}" x2="${cx}" y2="${yFor(q.q1)}" stroke="var(--text-sec)"/>
+        <line x1="${cx-boxW/4}" y1="${yFor(withinMax)}" x2="${cx+boxW/4}" y2="${yFor(withinMax)}" stroke="var(--text-sec)"/>
+        <line x1="${cx-boxW/4}" y1="${yFor(withinMin)}" x2="${cx+boxW/4}" y2="${yFor(withinMin)}" stroke="var(--text-sec)"/>
+        <rect x="${cx-boxW/2}" y="${yFor(q.q3)}" width="${boxW}" height="${yFor(q.q1)-yFor(q.q3)}" fill="${color}" opacity="0.24" stroke="${color}"/>
+        <line x1="${cx-boxW/2}" y1="${yFor(q.q2)}" x2="${cx+boxW/2}" y2="${yFor(q.q2)}" stroke="${color}" stroke-width="2.2"/>`;
+      g.values.forEach(v=>{
+        if(v<q.low||v>q.high){
+          const extreme = v < q.low-1.5*q.iqr || v > q.high+1.5*q.iqr;
+          content+=`<circle cx="${cx}" cy="${yFor(v)}" r="3.6" fill="${extreme?'var(--critico)':'var(--atencion)'}"/>`;
+        }
+      });
+      labels+=`<text x="${cx}" y="${M.t+innerH+22}" font-size="12" text-anchor="end" fill="var(--text-sec)" transform="rotate(-38 ${cx} ${M.t+innerH+22})">${g.label}</text>`;
+    });
+    let grid=''; for(let t=0;t<=4;t++){ const v=dmin+(dmax-dmin)*t/4; const y=yFor(v);
+      grid+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="var(--border)" stroke-dasharray="2,3"/><text x="${M.l-8}" y="${y+3}" font-size="12" text-anchor="end" fill="var(--text-sec)">${fmt(v)}</text>`; }
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${grid}${content}${labels}</svg>`;
+  }
+};
+
+/* =========================================================
+   AGREGACIÓN mensual (para el panel de tendencia)
+   ========================================================= */
+function aggregateMonthly(varId){
+  if(varId==='avance'){
+    const weights={};
+    RUBROS.forEach(r=>{ weights[r.id]=RAW[r.id].presupuesto.reduce((a,b)=>a+b,0); });
+    const cumByRubro={};
+    Object.keys(weights).forEach(rid=>{ let acc=0; cumByRubro[rid]=RAW[rid].avance.map(v=>acc+=v); });
+    return MESES.map((m,idx)=>{
+      let num=0, den=0;
+      Object.keys(weights).forEach(rid=>{ num+=weights[rid]*cumByRubro[rid][idx]; den+=weights[rid]; });
+      return den? num/den : 0;
+    });
+  }
+  return MESES.map((m,idx)=>{
+    let sum=0;
+    RUBROS.forEach(r=>{ sum+=RAW[r.id][varId][idx]; });
+    return sum;
+  });
+}
+function cumulative(arr){ let acc=0; return arr.map(v=>acc+=v); }
+
+/* =========================================================
+   RENDER — panel fijo de una sola pantalla, sólo EDA
+   ========================================================= */
+function buildPanel1(){
+  const vals = RECORDS.map(r=>getValue(r,'costo')).filter(v=>activeVal(v,'costo'));
+  const mean=A.mean(vals), median=A.median(vals), std=A.std(vals);
+  const asim = mean>median*1.3;
+  return {
+    badge:'01', color:'var(--eda)', title:'Distribución de Costo', type:'Histograma + curva de referencia',
+    chart: CH.histogram(vals,'var(--costos)'),
+    caption:`Media <b>${fmt(mean)}</b> · Mediana <b>${fmt(median)}</b> · Desvío <b>${fmt(std)}</b> miles $`,
+    interp:[
+      `La distribución tiene cola larga a la derecha: la mayoría de los registros mensuales están por debajo de ${fmt(median*1.5)} miles $, y unos pocos meses de Luminarias LED empujan la media muy por encima de la mediana.`,
+      `Conviene revisar esos meses en el panel 04 antes de tomarlos como referencia para presupuestar el resto de la obra.`
+    ]
+  };
+}
+function buildPanel2(){
+  const vars=['costo','avance'];
+  const seriesArr = vars.map(vId=>{
+    const vd=varDef(vId);
+    let monthly = aggregateMonthly(vId);
+    let vals = vId==='avance' ? monthly : cumulative(monthly);
+    const last = vals[vals.length-1]||1;
+    vals = vals.map(v=> last? v/last*100:0);
+    return {name:vd.label,color:vd.color,values:vals};
+  });
+  const costoPct = seriesArr[0].values, avancePct = seriesArr[1].values;
+  const brecha = Math.max(...costoPct.map((c,i)=>c-avancePct[i]));
+  return {
+    badge:'02', color:'var(--trend)', title:'Costo vs. Avance Físico', type:'Evolución acumulada (% del total)',
+    chart: CH.lineChart(seriesArr, MESES.map(m=>m.label), true),
+    caption:`<span style="color:var(--costos)">■</span> Costo &nbsp; <span style="color:var(--trend)">■</span> Avance &nbsp;·&nbsp; brecha máx. <b>${fmt(brecha)} p.p.</b>`,
+    interp:[
+      brecha>8
+        ? `El costo acumulado avanza por encima del avance físico acumulado, con una brecha máxima de ${fmt(brecha)} puntos porcentuales durante el período.`
+        : `El costo acumulado y el avance físico acumulado se mueven de forma relativamente pareja (brecha máxima ${fmt(brecha)} p.p.).`,
+      `Si la brecha crece, conviene revisar productividad y precios en los rubros con mayor peso presupuestario (panel 06).`
+    ]
+  };
+}
+function buildPanel3(){
+  const pairs = RECORDS.map(r=>({x:getValue(r,'avance'),y:getValue(r,'costo')})).filter(p=>!(p.x===0&&p.y===0));
+  const x=pairs.map(p=>p.x), y=pairs.map(p=>p.y);
+  const reg = A.regression(x,y);
+  return {
+    badge:'03', color:'var(--eda)', title:'Avance Físico vs. Costo', type:'Dispersión con línea de tendencia',
+    chart: CH.scatter(x,y,'Avance físico (%)','Costo (miles $)','var(--eda)'),
+    caption:`r = <b>${reg.r.toFixed(2)}</b> — ${A.corrStrengthLabel(reg.r)}`,
+    interp:[
+      `Se observa una relación ${reg.r>=0?'positiva':'negativa'} entre avance físico y costo (${A.corrStrengthLabel(reg.r)}); esto no implica causalidad.`,
+      `El punto muy por encima de la recta corresponde a Luminarias LED — vale la pena confirmar si responde a un ajuste de precio puntual.`
+    ]
+  };
+}
+function buildPanel4(){
+  const rubroId='cableado', varId='consumo';
+  const vd=varDef(varId);
+  const recs = RECORDS.filter(r=>r.rubro===rubroId);
+  const withData = recs.map(r=>({v:getValue(r,varId),label:r.mesLabel})).filter(d=>d.v>0);
+  const vals = withData.map(d=>d.v);
+  const flags = A.outliers(vals);
+  const flagIdx = flags.findIndex(f=>f.flag);
+  const capt = flagIdx>=0
+    ? `<b>${withData[flagIdx].label}</b>: ${fmt(vals[flagIdx])} m — valor atípico (IQR)`
+    : 'Sin valores atípicos en el período';
+  return {
+    badge:'04', color:'var(--atencion)', title:'Consumo de Cable', type:'Serie mensual — detección por IQR',
+    chart: CH.flaggedLine(vals, withData.map(d=>d.label), 'var(--eda)'),
+    caption: capt,
+    interp: flagIdx>=0 ? [
+      `${withData[flagIdx].label} registra ${fmt(vals[flagIdx])} m de cable, muy por encima de los meses vecinos según el método IQR (rango intercuartílico).`,
+      `Un valor atípico requiere análisis, no confirma un problema: puede deberse a recableado, pérdidas o un cambio de trazado puntual.`
+    ] : [`No se detectaron valores atípicos en el período para esta combinación de rubro y variable.`]
+  };
+}
+function buildPanel5(){
+  const coreVars=['avance','costo','horas','consumo','erogaciones','certificacion'];
+  const shortLabels=['Avance','Costo','Horas','Consumo','Erogac.','Certif.'];
+  const vdFull = coreVars.map(id=>varDef(id));
+  const vd = coreVars.map((id,i)=>({label:shortLabels[i]}));
+  const series = coreVars.map(id=> RECORDS.map(r=>getValue(r,id)||0));
+  const matrix = coreVars.map((_,i)=> coreVars.map((_,j)=> i===j?1:A.pearson(series[i],series[j])));
+  let strongest={i:0,j:1,r:0}, weakest={i:0,j:1,r:1};
+  for(let i=0;i<coreVars.length;i++) for(let j=i+1;j<coreVars.length;j++){
+    if(Math.abs(matrix[i][j])>Math.abs(strongest.r)) strongest={i,j,r:matrix[i][j]};
+    if(Math.abs(matrix[i][j])<Math.abs(weakest.r)) weakest={i,j,r:matrix[i][j]};
+  }
+  return {
+    badge:'05', color:'var(--costos)', title:'Matriz de Correlación', type:'Avance · Costo · Horas · Consumo · Erogaciones · Certificación',
+    chart: CH.corrMatrix(vd, matrix),
+    caption:`Más fuerte: <b>${vdFull[strongest.i].label}</b> ↔ <b>${vdFull[strongest.j].label}</b> (r=${strongest.r.toFixed(2)})`,
+    interp:[
+      `${vdFull[strongest.i].label} y ${vdFull[strongest.j].label} son las variables que más se mueven juntas del período (r=${strongest.r.toFixed(2)}).`,
+      `${vdFull[weakest.i].label} y ${vdFull[weakest.j].label} muestran la relación más débil (r=${weakest.r.toFixed(2)}) — la correlación no implica causalidad en ningún caso.`
+    ]
+  };
+}
+const RUBRO_LABEL_CORTO = {
+  excavacion:'Excavación', hormigon:'Hormigón', canalizaciones:'Canaliz.', columnas:'Columnas',
+  cableado:'Cableado', tableros:'Tableros', luminarias:'Luminarias', manoobra:'M. de Obra',
+  equipos:'Equipos', senalizacion:'Señaliz.'
+};
+function buildPanel6(){
+  const vId='costo';
+  const groups = RUBROS.map(r=>{
+    const vals = RECORDS.filter(rec=>rec.rubro===r.id).map(rec=>getValue(rec,vId)).filter(v=>v>0);
+    return {label:RUBRO_LABEL_CORTO[r.id], full:r.nombre, values: vals.length?vals:[0]};
+  });
+  let top={label:'',med:-Infinity}, disp={label:'',iqr:-Infinity};
+  groups.forEach(g=>{
+    const m=A.median(g.values); if(m>top.med) top={label:g.full,med:m};
+    const q=A.quartiles(g.values); if(q.iqr>disp.iqr) disp={label:g.full,iqr:q.iqr};
+  });
+  return {
+    badge:'06', color:'var(--productividad)', title:'Costo por Rubro', type:'Diagrama de caja (boxplot)',
+    chart: CH.boxplot(groups, 'var(--productividad)'),
+    caption:`Mayor mediana: <b>${top.label}</b>`,
+    interp:[
+      `${top.label} concentra la mediana de costo más alta entre los rubros comparados.`,
+      `${disp.label} presenta la caja más alta (mayor dispersión mensual), lo que indica menor previsibilidad de costo mes a mes.`
+    ]
+  };
+}
+
+function panelHtml(p){
+  const vb = p.chart.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  const ratio = vb ? `${vb[1]}/${vb[2]}` : '2/1';
+  const interpHtml = (p.interp||[]).map((line,i)=>
+    `<div class="iline"><b class="itag">${i===0?'¿Qué se observa?':'¿Qué investigar?'}</b> ${line}</div>`
+  ).join('');
+  return `<div class="card">
+    <div class="chead">
+      <div class="badge" style="background:${p.color}">${p.badge}</div>
+      <div class="ctitle"><h3>${p.title}</h3><div class="ctype">${p.type}</div></div>
+    </div>
+    <div class="chart-wrap" style="aspect-ratio:${ratio}">${p.chart}</div>
+    <div class="caption">${p.caption}</div>
+    <div class="mini-interp">${interpHtml}</div>
+  </div>`;
+}
+
+function render(){
+  const panels=[buildPanel1(),buildPanel2(),buildPanel3(),buildPanel4(),buildPanel5(),buildPanel6()];
+  document.getElementById('app').innerHTML = `
+    <div class="top">
+      <div>
+        <h1>Análisis <span>Exploratorio de Datos</span> (EDA)</h1>
+        <div class="sub">Exploración del comportamiento económico y operativo de la obra</div>
+      </div>
+      <div class="obra"><b>Alumbrado Público RP16</b>Ene — Jul 2026<br>10 rubros · 70 registros</div>
+    </div>
+    <div class="grid">${panels.map(panelHtml).join('')}</div>
+  `;
+}
+render();
+</script>
+</body>
+</html>

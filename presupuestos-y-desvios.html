@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Presupuestos y Desvíos | Control de Gestión</title>
+<meta name="description" content="Análisis de presupuesto, costo, avance físico e incidencia de desvíos por rubro." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --background: oklch(0.965 0.006 225);
+    --foreground: oklch(0.24 0.035 224);
+    --card: oklch(1 0 0);
+    --primary: oklch(0.34 0.065 216);
+    --primary-foreground: oklch(0.985 0.003 225);
+    --muted: oklch(0.952 0.008 225);
+    --muted-foreground: oklch(0.53 0.025 225);
+    --accent: oklch(0.83 0.15 82);
+    --accent-strong: oklch(0.6 0.15 65);
+    --destructive: oklch(0.59 0.21 27);
+    --positive: oklch(0.55 0.12 173);
+    --border: oklch(0.88 0.012 224);
+    --chart-budget: oklch(0.73 0.06 219);
+    --chart-actual: oklch(0.39 0.1 217);
+    --chart-violet: oklch(0.58 0.18 299);
+    --chart-teal: oklch(0.61 0.13 183);
+    --chart-amber: oklch(0.73 0.16 72);
+    --chart-danger: oklch(0.59 0.21 27);
+    --chart-positive: oklch(0.55 0.12 173);
+    --chart-grid: oklch(0.88 0.012 224);
+    --radius: 0.5rem;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  .top-rule { height: 4px; background: linear-gradient(90deg, var(--primary) 0 46%, var(--chart-violet) 46% 62%, var(--chart-teal) 62% 78%, var(--chart-amber) 78% 91%, var(--destructive) 91%); }
+  .wrap { max-width: 1540px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  @media (min-width: 640px) { .wrap { padding: 1.5rem 1.75rem 4rem; } }
+  @media (min-width: 1024px) { .wrap { padding: 2rem 2.5rem 4rem; } }
+
+  header.page { margin-bottom: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; display: grid; grid-template-columns: minmax(0,1fr); gap: 1rem; }
+  @media (min-width: 640px) { header.page { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; } }
+  .kicker { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--primary); margin-bottom: 0.75rem; }
+  .kicker svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+  .title-row { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
+  .module-tag { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.875rem; color: var(--muted-foreground); display: none; }
+  @media (min-width: 640px) { .module-tag { display: inline; } }
+  h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+  @media (min-width: 640px) { h1 { font-size: 1.875rem; } }
+  .context-box { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; border: 1px solid var(--border); background: var(--card); border-radius: var(--radius); padding: 0.75rem 1rem; box-shadow: 0 1px 2px oklch(0.2 0.03 220 / 0.04); }
+  .context-box .sep { width: 1px; height: 2rem; background: var(--border); }
+  .context-label { color: var(--muted-foreground); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; }
+  .context-value { font-size: 0.875rem; font-weight: 700; white-space: nowrap; }
+
+  .grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+  @media (min-width: 1280px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .analysis-card { min-width: 0; border: 1px solid var(--border); border-radius: calc(var(--radius) + 0.25rem); background: var(--card); padding: 1.25rem; box-shadow: 0 1px 2px oklch(0.2 0.03 220 / 0.04), 0 8px 24px oklch(0.2 0.03 220 / 0.035); }
+  @media (min-width: 640px) { .analysis-card { padding: 1.5rem; } }
+  .card-head { display: grid; grid-template-columns: minmax(0,1fr); align-items: start; gap: 0.75rem; }
+  @media (min-width: 640px) { .card-head { grid-template-columns: minmax(0,1fr) auto; } }
+  .card-title-row { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+  .card-number { display: grid; place-items: center; height: 2rem; width: 2rem; flex-shrink: 0; border-radius: calc(var(--radius) - 0.125rem); background: color-mix(in oklch, var(--primary) 10%, transparent); color: var(--primary); font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.75rem; font-weight: 600; }
+  h2 { font-size: 1.125rem; font-weight: 700; min-width: 0; }
+  .control { justify-self: end; }
+
+  .segmented { display: inline-flex; flex-shrink: 0; border-radius: calc(var(--radius) - 0.125rem); background: var(--muted); padding: 0.25rem; }
+  .segmented button { border: none; cursor: pointer; font-family: inherit; font-size: 0.8125rem; font-weight: 600; border-radius: 0.25rem; padding: 0.3rem 0.75rem; background: transparent; color: var(--foreground); white-space: nowrap; }
+  .segmented button.active { background: var(--primary); color: var(--primary-foreground); box-shadow: 0 1px 2px oklch(0.2 0.03 220 / 0.15); }
+
+  select.rubric-select { font-family: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--foreground); background: var(--muted); border: 1px solid var(--border); border-radius: calc(var(--radius) - 0.125rem); padding: 0.35rem 0.6rem; cursor: pointer; max-width: 170px; }
+
+  .metric-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; overflow: hidden; border: 1px solid var(--border); border-radius: calc(var(--radius) - 0.125rem); background: var(--border); margin: 1.25rem 0; }
+  @media (min-width: 640px) { .metric-strip { grid-template-columns: repeat(4, 1fr); } }
+  .metric-block { display: flex; min-height: 4.5rem; flex-direction: column; justify-content: center; background: var(--card); padding: 0.85rem; }
+  .metric-label { color: var(--muted-foreground); font-size: 0.65rem; font-weight: 600; text-transform: uppercase; }
+  .metric-value { margin-top: 0.3rem; color: var(--foreground); font-size: 1.05rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .metric-value.danger { color: var(--destructive); }
+  .metric-value.good { color: var(--positive); }
+  .metric-pair { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin: 1.25rem 0; }
+  .metric-pair .metric-block { border: 1px solid var(--border); border-radius: calc(var(--radius) - 0.125rem); background: var(--muted); }
+
+  .chart-box { width: 100%; }
+  .chart-box svg { display: block; }
+  .legend { display: flex; align-items: center; gap: 1.25rem; font-size: 0.75rem; color: var(--muted-foreground); margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legend .dot::before { content: ""; height: 0.5rem; width: 0.5rem; border-radius: 2px; background: var(--dot, var(--chart-budget)); }
+  .legend .line::before { content: ""; height: 2px; width: 1rem; background: var(--chart-violet); }
+
+  .insight-grid { margin-top: 1.25rem; display: grid; gap: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  @media (min-width: 640px) { .insight-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .insight-label { color: var(--primary); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
+  .insight-text { margin-top: 0.35rem; color: var(--muted-foreground); font-size: 0.75rem; line-height: 1.55; }
+
+  table.rubric-table { width: 100%; min-width: 520px; font-size: 0.75rem; border-collapse: collapse; margin-top: 0.5rem; }
+  table.rubric-table th { text-align: right; font-weight: 500; color: var(--muted-foreground); padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+  table.rubric-table th:first-child { text-align: left; }
+  table.rubric-table td { text-align: right; padding: 0.5rem 0; border-bottom: 1px solid color-mix(in oklch, var(--border) 70%, transparent); font-variant-numeric: tabular-nums; }
+  table.rubric-table td:first-child { text-align: left; font-weight: 600; }
+  table.rubric-table td.neg { color: var(--destructive); font-weight: 600; }
+  table.rubric-table td.pos { color: var(--positive); font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
+
+  .advance-panel { margin-top: 1.5rem; border-radius: calc(var(--radius) - 0.125rem); background: var(--primary); color: var(--primary-foreground); padding: 1.25rem; }
+  .advance-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+  .advance-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; }
+  .advance-value { margin-top: 0.25rem; font-size: 1.875rem; font-weight: 700; }
+  .advance-track { height: 0.5rem; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,0.2); }
+  .advance-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+  .comparison-line { position: relative; margin: 2rem 1rem 0; height: 0.4rem; border-radius: 999px; background: var(--muted); }
+  .comparison-marker { position: absolute; top: 50%; height: 1rem; width: 3px; transform: translate(-50%, -50%); border-radius: 999px; }
+  .comparison-marker span { position: absolute; top: 1rem; left: 50%; width: max-content; transform: translateX(-50%); color: var(--muted-foreground); font-size: 0.65rem; line-height: 1.3; text-align: center; }
+
+  .formula-grid { margin-top: 1.25rem; display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+  @media (min-width: 640px) { .formula-grid { grid-template-columns: repeat(2, 1fr); } }
+  .formula-box { border: 1px solid var(--border); border-radius: calc(var(--radius) - 0.125rem); background: var(--muted); padding: 1rem; }
+  .formula-box .expr { margin-top: 0.5rem; font-size: 0.875rem; }
+  .formula-box .result { margin-top: 0.5rem; font-size: 1.125rem; font-weight: 700; }
+
+  .note { margin-top: 1rem; display: flex; align-items: flex-start; gap: 0.5rem; border: 1px solid var(--accent); background: color-mix(in oklch, var(--accent) 12%, transparent); border-radius: calc(var(--radius) - 0.125rem); padding: 0.75rem; font-size: 0.75rem; }
+  .note svg { width: 1rem; height: 1rem; flex-shrink: 0; margin-top: 0.1rem; color: var(--accent-strong); }
+
+  .concentration { display: flex; align-items: center; gap: 0.75rem; background: var(--muted); border-radius: calc(var(--radius) - 0.125rem); padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.875rem; }
+  .concentration svg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+
+  #tooltip { position: fixed; pointer-events: none; background: var(--foreground); color: var(--background); font-size: 0.72rem; font-weight: 600; padding: 0.35rem 0.55rem; border-radius: 0.35rem; opacity: 0; transition: opacity 0.1s; z-index: 50; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="top-rule"></div>
+<div class="wrap" id="app"></div>
+<div id="tooltip"></div>
+
+<script>
+"use strict";
+
+// ============ Datos demo ============
+const items = [
+  { name: "Columnas", short: "Columnas", budgetQty: 180, budgetPrice: 220000, actualQty: 194, actualPrice: 224000 },
+  { name: "Luminarias LED", short: "Luminarias", budgetQty: 180, budgetPrice: 310000, actualQty: 180, actualPrice: 316000 },
+  { name: "Cableado", short: "Cableado", budgetQty: 12500, budgetPrice: 5300, actualQty: 13900, actualPrice: 5750 },
+  { name: "Tableros eléctricos", short: "Tableros", budgetQty: 12, budgetPrice: 1680000, actualQty: 12, actualPrice: 1740000 },
+  { name: "Canalizaciones", short: "Canalizac.", budgetQty: 8200, budgetPrice: 4100, actualQty: 8000, actualPrice: 4050 },
+  { name: "Excavación", short: "Excavación", budgetQty: 6800, budgetPrice: 3200, actualQty: 7100, actualPrice: 3100 },
+  { name: "Hormigón", short: "Hormigón", budgetQty: 460, budgetPrice: 86000, actualQty: 470, actualPrice: 92500 },
+  { name: "Mano de obra", short: "M. de obra", budgetQty: 14800, budgetPrice: 7200, actualQty: 15650, actualPrice: 7480 },
+  { name: "Equipos", short: "Equipos", budgetQty: 1650, budgetPrice: 28500, actualQty: 1580, actualPrice: 28200 },
+  { name: "Señalización y seguridad", short: "Seguridad", budgetQty: 1, budgetPrice: 16200000, actualQty: 1, actualPrice: 15700000 },
+];
+const rubrics = items.map((it) => {
+  const budget = it.budgetQty * it.budgetPrice;
+  const actual = it.actualQty * it.actualPrice;
+  const variance = actual - budget;
+  return { ...it, budget, actual, variance, variancePct: (variance / budget) * 100 };
+});
+const monthly = [
+  { month: "Ene", budget: 35.5, actual: 34.2, progress: 9 },
+  { month: "Feb", budget: 48.8, actual: 47.9, progress: 20 },
+  { month: "Mar", budget: 59.4, actual: 61.8, progress: 32 },
+  { month: "Abr", budget: 72.2, actual: 77.4, progress: 46 },
+  { month: "May", budget: 67.1, actual: 74.6, progress: 60 },
+  { month: "Jun", budget: 61.5, actual: 69.9, progress: 73 },
+  { month: "Jul", budget: 56.8, actual: 64.1, progress: 82 },
+].map((d) => ({ ...d, variance: d.actual - d.budget, variancePct: ((d.actual - d.budget) / d.budget) * 100 }));
+
+const totalBudget = rubrics.reduce((s, d) => s + d.budget, 0) / 1e6;
+const advance = 82;
+const budgetAtAdvance = totalBudget * (advance / 100);
+const costAtAdvance = monthly.reduce((s, d) => s + d.actual, 0);
+const advanceVariance = costAtAdvance - budgetAtAdvance;
+const advanceVariancePct = (advanceVariance / budgetAtAdvance) * 100;
+
+const COLORS = {
+  budget: "var(--chart-budget)", actual: "var(--chart-actual)",
+  violet: "var(--chart-violet)", amber: "var(--chart-amber)",
+  danger: "var(--chart-danger)", positive: "var(--chart-positive)",
+  grid: "var(--chart-grid)", fg: "var(--foreground)", muted: "var(--muted-foreground)",
+};
+
+// ============ Formato ============
+const NF1 = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const NF0 = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
+const money = (v) => `$ ${NF1.format(Math.abs(v))} M`;
+const signedMoney = (v) => `${v >= 0 ? "+" : "−"}${money(v)}`;
+const signedPct = (v) => `${v >= 0 ? "+" : "−"}${NF1.format(Math.abs(v))} %`;
+
+// ============ Estado ============
+const state = { summary: "cumulative", evolution: "money", rubric: "money", selectedRubric: "Cableado" };
+
+// ============ Utilidades SVG ============
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function ticksFor(lo, hi, count) {
+  const raw = (hi - lo) / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
+  const out = [];
+  for (let t = Math.ceil(lo / step) * step; t <= hi + step * 0.01; t += step) out.push(Math.round(t * 1e6) / 1e6);
+  return out;
+}
+function niceDomain(min, max) {
+  let lo = Math.min(min, 0), hi = Math.max(max, 0);
+  const pad = (hi - lo) * 0.14 || 1;
+  lo = Math.min(lo - pad, lo); hi = Math.max(hi + pad, hi);
+  const step = ((hi - lo) / 4);
+  const mag = Math.pow(10, Math.floor(Math.log10(step)));
+  const norm = step / mag;
+  const st = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
+  lo = Math.floor(lo / st) * st; hi = Math.ceil(hi / st) * st;
+  return { lo, hi, step: st };
+}
+const tooltip = document.getElementById("tooltip");
+function bindTip(node, text) {
+  node.addEventListener("mousemove", (e) => {
+    tooltip.textContent = text;
+    tooltip.style.opacity = "1";
+    tooltip.style.left = Math.min(e.clientX + 12, window.innerWidth - 160) + "px";
+    tooltip.style.top = (e.clientY - 30) + "px";
+  });
+  node.addEventListener("mouseleave", () => { tooltip.style.opacity = "0"; });
+}
+
+// Gráfico de barras verticales (una o varias series) con eje opcional secundario y línea.
+function verticalChart(container, cfg) {
+  const width = container.clientWidth || 600;
+  const h = cfg.height;
+  const hasSec = !!cfg.line || !!cfg.refLine;
+  const m = { top: cfg.top ?? 16, right: hasSec ? 48 : 14, bottom: cfg.rotateX ? 62 : 28, left: cfg.left ?? 52 };
+  const svg = el("svg", { width, height: h, viewBox: `0 0 ${width} ${h}`, role: "img" });
+  container.appendChild(svg);
+  const pw = width - m.left - m.right, ph = h - m.top - m.bottom;
+
+  const dom = cfg.domain || niceDomain(cfg.min ?? 0, cfg.max);
+  const yOf = (v) => m.top + ((dom.hi - v) / (dom.hi - dom.step === dom.step ? 1 : 1)) * 0; // placeholder
+  const yMap = (v) => m.top + ((dom.hi - v) / (dom.hi - dom.lo)) * ph;
+  const secDom = cfg.secDomain || niceDomain(cfg.secMin ?? 0, cfg.secMax ?? 1);
+  const ySec = (v) => m.top + ((secDom.hi - v) / (secDom.hi - secDom.lo)) * ph;
+
+  // Grid horizontal + etiquetas eje principal
+  for (const t of ticksFor(dom.lo, dom.hi, 4)) {
+    el("line", { x1: m.left, x2: m.left + pw, y1: yMap(t), y2: yMap(t), stroke: COLORS.grid, "stroke-width": 1 }, svg);
+    const txt = el("text", { x: m.left - 8, y: yMap(t) + 4, "text-anchor": "end", "font-size": 11, fill: COLORS.muted }, svg);
+    txt.textContent = cfg.fmtMain(t);
+  }
+  // Eje secundario
+  if (hasSec && cfg.showSecAxis !== false) {
+    for (const t of ticksFor(secDom.lo, secDom.hi, 4)) {
+      const txt = el("text", { x: m.left + pw + 8, y: ySec(t) + 4, "font-size": 11, fill: COLORS.muted }, svg);
+      txt.textContent = cfg.fmtSec ? cfg.fmtSec(t) : t;
+    }
+  }
+  // Bandas y barras
+  const n = cfg.data.length;
+  const band = pw / n;
+  const series = cfg.series || [];
+  const groupW = Math.min(band * 0.72, series.length * (cfg.barMax || 76));
+  const barW = groupW / series.length;
+  const zeroY = yMap(Math.max(dom.lo, Math.min(0, dom.hi)));
+  cfg.data.forEach((d, i) => {
+    const x0 = m.left + band * i + (band - groupW) / 2;
+    series.forEach((s, j) => {
+      const v = d[s.key];
+      const y = yMap(Math.max(v, 0) === v ? v : v);
+      const yTop = v >= 0 ? yMap(v) : zeroY;
+      const yBot = v >= 0 ? zeroY : yMap(v);
+      const r = el("rect", {
+        x: x0 + barW * j, y: yTop, width: barW * 0.82, height: Math.max(1, yBot - yTop),
+        rx: 3, fill: s.fill || COLORS.actual,
+      }, svg);
+      bindTip(r, `${s.name}: ${s.tip ? s.tip(d) : cfg.fmtMain(v)}`);
+    });
+    // Etiqueta X
+    const lx = m.left + band * i + band / 2;
+    const ly = h - m.bottom + 16;
+    const label = el("text", { x: lx, y: ly, "text-anchor": cfg.rotateX ? "end" : "middle", "font-size": cfg.rotateX ? 10 : 11, fill: COLORS.muted }, svg);
+    if (cfg.rotateX) label.setAttribute("transform", `rotate(-28 ${lx} ${ly})`);
+    label.textContent = d[cfg.xKey];
+  });
+  // Línea de referencia secundaria (Pareto 80%)
+  if (cfg.refLine != null) {
+    el("line", { x1: m.left, x2: m.left + pw, y1: ySec(cfg.refLine), y2: ySec(cfg.refLine), stroke: COLORS.danger, "stroke-width": 1.5, "stroke-dasharray": "5 4" }, svg);
+  }
+  // Línea de datos sobre eje secundario
+  if (cfg.line) {
+    const pts = cfg.data.map((d, i) => [m.left + band * i + band / 2, ySec(d[cfg.line.key])]);
+    const path = pts.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+    el("path", { d: path, fill: "none", stroke: COLORS.violet, "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    pts.forEach((p, i) => {
+      el("circle", { cx: p[0], cy: p[1], r: 3.2, fill: COLORS.violet }, svg);
+      const hit = el("circle", { cx: p[0], cy: p[1], r: 10, fill: "transparent" }, svg);
+      bindTip(hit, `${cfg.line.name}: ${cfg.line.tip(cfg.data[i])}`);
+    });
+  }
+}
+
+// Barras horizontales (desvío por rubro)
+function horizontalChart(container, rows, mode) {
+  const width = container.clientWidth || 600;
+  const h = 330;
+  const m = { top: 8, right: 34, bottom: 26, left: 84 };
+  const svg = el("svg", { width, height: h, viewBox: `0 0 ${width} ${h}`, role: "img" });
+  container.appendChild(svg);
+  const pw = width - m.left - m.right, ph = h - m.top - m.bottom;
+  const values = rows.map((d) => (mode === "money" ? d.variance / 1e6 : d.variancePct));
+  const dom = niceDomain(Math.min(...values), Math.max(...values));
+  const xMap = (v) => m.left + ((v - dom.lo) / (dom.hi - dom.lo)) * pw;
+  for (const t of ticksFor(dom.lo, dom.hi, 5)) {
+    el("line", { x1: xMap(t), x2: xMap(t), y1: m.top, y2: m.top + ph, stroke: COLORS.grid }, svg);
+    const txt = el("text", { x: xMap(t), y: h - 8, "text-anchor": "middle", "font-size": 11, fill: COLORS.muted }, svg);
+    txt.textContent = mode === "money" ? `$${NF0.format(t)}M` : `${t}%`;
+  }
+  el("line", { x1: xMap(0), x2: xMap(0), y1: m.top, y2: m.top + ph, stroke: COLORS.muted, "stroke-width": 1 }, svg);
+  const rowH = ph / rows.length;
+  rows.forEach((d, i) => {
+    const v = values[i];
+    const yC = m.top + rowH * i + rowH / 2;
+    const barH = Math.min(16, rowH * 0.6);
+    const x1 = v >= 0 ? xMap(0) : xMap(v);
+    const w = Math.max(2, Math.abs(xMap(v) - xMap(0)));
+    const r = el("rect", { x: x1, y: yC - barH / 2, width: w, height: barH, rx: 3, fill: v >= 0 ? COLORS.danger : COLORS.positive }, svg);
+    bindTip(r, `${d.name}: ${mode === "money" ? money(v) : signedPct(v)}`);
+    const lbl = el("text", { x: m.left - 8, y: yC + 4, "text-anchor": "end", "font-size": 11, fill: COLORS.fg }, svg);
+    lbl.textContent = d.short;
+  });
+}
+
+// ============ Cálculos derivados del estado ============
+function derived() {
+  const lastMonth = monthly[monthly.length - 1];
+  const ordered = [...rubrics].sort((a, b) =>
+    state.rubric === "money" ? Math.abs(b.variance) - Math.abs(a.variance) : Math.abs(b.variancePct) - Math.abs(a.variancePct));
+  const selected = rubrics.find((d) => d.name === state.selectedRubric);
+  const lead = ordered[0];
+  const summary = state.summary === "cumulative"
+    ? { budget: monthly.reduce((s, d) => s + d.budget, 0), actual: monthly.reduce((s, d) => s + d.actual, 0) }
+    : { budget: lastMonth.budget, actual: lastMonth.actual };
+  const summaryVariance = summary.actual - summary.budget;
+  const summaryPct = (summaryVariance / summary.budget) * 100;
+  const qtyEffect = ((selected.actualQty - selected.budgetQty) * selected.budgetPrice) / 1e6;
+  const priceEffect = (selected.actualQty * (selected.actualPrice - selected.budgetPrice)) / 1e6;
+  const positives = rubrics.filter((d) => d.variance > 0).sort((a, b) => b.variance - a.variance);
+  const positiveTotal = positives.reduce((s, d) => s + d.variance, 0);
+  let acc = 0;
+  const pareto = positives.map((d) => { const inc = (d.variance / positiveTotal) * 100; acc += inc; return { name: d.short, variance: d.variance / 1e6, incidence: inc, cumulative: acc }; });
+  const keyCount = Math.max(1, pareto.findIndex((d) => d.cumulative >= 80) + 1);
+  const keyShare = pareto[keyCount - 1].cumulative;
+  return { lastMonth, ordered, selected, lead, summary, summaryVariance, summaryPct, qtyEffect, priceEffect, pareto, keyCount, keyShare };
+}
+
+// ============ Íconos ============
+const icons = {
+  hardhat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1Z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><path d="M14 6a6 6 0 0 1 6 6v3"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+  upRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>',
+  downRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10"/><path d="M17 7v10H7"/></svg>',
+};
+
+// ============ Plantillas ============
+function cardShell(number, title, control, body, observation, research) {
+  return `<article class="analysis-card">
+    <div class="card-head">
+      <div class="card-title-row"><span class="card-number">${number}</span><h2>${title}</h2></div>
+      ${control ? `<div class="control">${control}</div>` : ""}
+    </div>
+    ${body}
+    <div class="insight-grid">
+      <div><p class="insight-label">Qué se observa</p><p class="insight-text">${observation}</p></div>
+      <div><p class="insight-label">Qué debería investigarse</p><p class="insight-text">${research}</p></div>
+    </div>
+  </article>`;
+}
+function segmented(id, value, options) {
+  return `<div class="segmented" role="group" aria-label="Cambiar vista">${options.map((o) =>
+    `<button type="button" data-set="${id}" data-value="${o.value}" class="${o.value === value ? "active" : ""}">${o.label}</button>`).join("")}</div>`;
+}
+function metric(label, value, tone) {
+  return `<div class="metric-block"><span class="metric-label">${label}</span><span class="metric-value ${tone || ""}">${value}</span></div>`;
+}
+
+// ============ Render principal ============
+function render() {
+  const d = derived();
+  const cards = [];
+
+  // ---- 01 Presupuesto vs. costo ejecutado ----
+  const c1 = cardShell("01", "Presupuesto vs. costo ejecutado",
+    segmented("summary", state.summary, [{ value: "period", label: "Período" }, { value: "cumulative", label: "Acumulado" }]),
+    `<div class="metric-strip">
+      ${metric("Presupuesto", money(d.summary.budget))}
+      ${metric("Costo ejecutado", money(d.summary.actual))}
+      ${metric("Desvío $", signedMoney(d.summaryVariance), "danger")}
+      ${metric("Desvío %", signedPct(d.summaryPct), "danger")}
+    </div>
+    <div class="chart-box" id="chart1" style="height:224px"></div>`,
+    `El costo ${state.summary === "cumulative" ? "acumulado" : "de julio"} supera el presupuesto en ${signedMoney(d.summaryVariance)} (${signedPct(d.summaryPct)}).`,
+    `Revisar en qué rubros y meses se origina la diferencia, separando cantidades y precios unitarios.`);
+  cards.push(c1);
+
+  // ---- 02 Evolución del desvío ----
+  const isMoney = state.evolution === "money";
+  const c2 = cardShell("02", "Evolución del desvío",
+    segmented("evolution", state.evolution, [{ value: "money", label: "$" }, { value: "percent", label: "%" }]),
+    `<div class="legend" style="margin-top:1.5rem">
+      <span class="dot" style="--dot: var(--chart-budget)">Presupuesto</span>
+      <span class="dot" style="--dot: var(--chart-actual)">Costo ejecutado</span>
+      <span class="line">Desvío ${isMoney ? "$" : "%"}</span>
+    </div>
+    <div class="chart-box" id="chart2" style="height:276px"></div>`,
+    `La diferencia cambia de signo en marzo y se amplía de forma sostenida hasta junio; en julio se reduce levemente.`,
+    `Contrastar marzo–junio con certificaciones, compras y cambios de alcance registrados en esos meses.`);
+  cards.push(c2);
+
+  // ---- 03 Desvío por rubro ----
+  const rubricMoney = state.rubric === "money";
+  const top4 = d.ordered.slice(0, 4).map((r) => `<tr>
+      <td>${r.name}</td>
+      <td>${money(r.budget / 1e6)}</td>
+      <td>${money(r.actual / 1e6)}</td>
+      <td class="${r.variance > 0 ? "neg" : "pos"}">${signedMoney(r.variance / 1e6)}</td>
+      <td class="${r.variance > 0 ? "neg" : "pos"}">${signedPct(r.variancePct)}</td>
+    </tr>`).join("");
+  const c3 = cardShell("03", "Desvío por rubro",
+    segmented("rubric", state.rubric, [{ value: "money", label: "Desvío $" }, { value: "percent", label: "Desvío %" }]),
+    `<div class="chart-box" id="chart3" style="margin-top:1.25rem;height:330px"></div>
+     <div class="table-scroll"><table class="rubric-table">
+      <thead><tr><th>Rubro</th><th>Presupuesto</th><th>Ejecutado</th><th>Desvío $</th><th>Desvío %</th></tr></thead>
+      <tbody>${top4}</tbody></table></div>`,
+    `${d.lead.name} encabeza el orden por desvío ${rubricMoney ? "absoluto" : "relativo"}. El orden cambia al alternar la métrica.`,
+    `Comparar relevancia económica y variación porcentual antes de priorizar el análisis de cada rubro.`);
+  cards.push(c3);
+
+  // ---- 04 Costo ejecutado vs. presupuesto según avance ----
+  const markerPos = Math.min(95, (budgetAtAdvance / costAtAdvance) * 90);
+  const c4 = cardShell("04", "Costo ejecutado vs. presupuesto según avance", null,
+    `<div class="advance-panel">
+      <div class="advance-head">
+        <div><p class="advance-label">Avance físico</p><p class="advance-value">${advance}%</p></div>
+        <span style="opacity:0.7;width:1.25rem;height:1.25rem">${icons.info}</span>
+      </div>
+      <div class="advance-track"><div class="advance-fill" style="width:${advance}%"></div></div>
+    </div>
+    <div class="metric-pair">
+      ${metric("Presupuesto total", money(totalBudget))}
+      ${metric("Presupuesto según avance", money(budgetAtAdvance))}
+      ${metric("Costo ejecutado", money(costAtAdvance))}
+      ${metric("Desvío relativo", signedPct(advanceVariancePct), advanceVariance > 0 ? "danger" : "good")}
+    </div>
+    <div class="comparison-line">
+      <div class="comparison-marker" style="left:${markerPos}%;background:var(--chart-budget)"><span>Referencia<br />${money(budgetAtAdvance)}</span></div>
+      <div class="comparison-marker" style="left:90%;background:var(--destructive)"><span>Costo<br />${money(costAtAdvance)}</span></div>
+    </div>
+    <div class="note" style="margin-top:2.5rem"><span>${icons.warn}</span><span>Referencia económica normalizada por avance; no es una medición causal.</span></div>`,
+    `Con ${advance}% de avance físico, el costo acumulado se encuentra ${signedMoney(advanceVariance)} por encima de la referencia presupuestaria proporcional.`,
+    `Validar la correspondencia entre avance certificado, curva presupuestaria y momento de reconocimiento de costos. Esta referencia no establece causalidad.`);
+  cards.push(c4);
+
+  // ---- 05 Precio vs. cantidad ----
+  const s = d.selected;
+  const dominant = Math.abs(d.qtyEffect) >= Math.abs(d.priceEffect) ? "cantidad" : "precio";
+  const c5 = cardShell("05", "Precio vs. cantidad",
+    `<select class="rubric-select" id="rubric-select" aria-label="Seleccionar rubro">
+      ${rubrics.map((r) => `<option value="${r.name}" ${r.name === state.selectedRubric ? "selected" : ""}>${r.name}</option>`).join("")}
+    </select>`,
+    `<div class="formula-grid">
+      <div class="formula-box"><p class="context-label">Presupuesto</p>
+        <p class="expr"><strong>${NF0.format(s.budgetQty)}</strong> × <strong>$${NF0.format(s.budgetPrice)}</strong></p>
+        <p class="result">${money(s.budget / 1e6)}</p></div>
+      <div class="formula-box"><p class="context-label">Real</p>
+        <p class="expr"><strong>${NF0.format(s.actualQty)}</strong> × <strong>$${NF0.format(s.actualPrice)}</strong></p>
+        <p class="result">${money(s.actual / 1e6)}</p></div>
+    </div>
+    <div class="chart-box" id="chart5" style="height:230px;padding-top:1.25rem"></div>`,
+    `${s.name} presenta un desvío total de ${signedMoney(s.variance / 1e6)}; el mayor aporte aproximado proviene del efecto ${dominant}.`,
+    `Contrastar cantidades ejecutadas y precios unitarios con remitos, mediciones, órdenes de compra y alcance aprobado.`);
+  cards.push(c5);
+
+  // ---- 06 Incidencia del desvío por rubro ----
+  const c6 = cardShell("06", "Incidencia del desvío por rubro", null,
+    `<div class="legend" style="margin-top:1.25rem">
+      <span class="dot" style="--dot: var(--chart-amber)">Desvío por rubro</span>
+      <span class="line">% acumulado</span>
+    </div>
+    <div class="chart-box" id="chart6" style="height:300px"></div>
+    <div class="concentration">
+      <span style="color:${d.keyShare >= 80 ? "var(--destructive)" : "var(--positive)"}">${d.keyShare >= 80 ? icons.upRight : icons.downRight}</span>
+      <p><strong>Concentración:</strong> los principales rubros acumulan <strong>${d.keyShare.toFixed(0)}%</strong> del desvío total.</p>
+    </div>`,
+    `Los primeros ${d.keyCount} rubros concentran ${d.keyShare.toFixed(0)}% del desvío positivo total.`,
+    `Analizar cada rubro de alta incidencia por separado; la concentración orienta la revisión, pero no explica sus causas.`);
+  cards.push(c6);
+
+  document.getElementById("app").innerHTML = `
+    <header class="page">
+      <div>
+        <div class="kicker"><span>${icons.hardhat}</span><span>Laboratorio de Control de Gestión</span></div>
+        <div class="title-row"><span class="module-tag">MÓDULO 02</span><h1>Presupuestos y Desvíos</h1></div>
+      </div>
+      <div class="context-box">
+        <div><p class="context-label">Obra demo</p><p class="context-value">Alumbrado Público RP16</p></div>
+        <div class="sep"></div>
+        <div><p class="context-label">Período</p><p class="context-value">Ene — Jul 2026</p></div>
+      </div>
+    </header>
+    <section class="grid">${cards.join("")}</section>`;
+
+  drawCharts(d);
+}
+
+// ============ Gráficos ============
+function drawCharts(d) {
+  // 01 — Presupuesto vs. ejecutado
+  verticalChart(document.getElementById("chart1"), {
+    height: 224, top: 10, left: 58, barMax: 76,
+    data: [{ name: state.summary === "cumulative" ? "Ene–Jul" : "Julio", budget: d.summary.budget, actual: d.summary.actual }],
+    xKey: "name", series: [
+      { key: "budget", name: "Presupuesto", fill: COLORS.budget },
+      { key: "actual", name: "Ejecutado", fill: COLORS.actual },
+    ],
+    min: 0, max: Math.max(d.summary.budget, d.summary.actual),
+    fmtMain: (v) => `$${NF0.format(v)}M`,
+  });
+
+  // 02 — Evolución mensual
+  const isMoney = state.evolution === "money";
+  verticalChart(document.getElementById("chart2"), {
+    height: 276, left: 52,
+    data: monthly, xKey: "month",
+    series: [
+      { key: "budget", name: "Presupuesto", fill: COLORS.budget },
+      { key: "actual", name: "Ejecutado", fill: COLORS.actual },
+    ],
+    min: 0, max: Math.max(...monthly.map((m) => m.budget), ...monthly.map((m) => m.actual)),
+    fmtMain: (v) => `$${NF0.format(v)}M`,
+    line: {
+      key: isMoney ? "variance" : "variancePct",
+      name: isMoney ? "Desvío $" : "Desvío %",
+      tip: (m) => isMoney ? signedMoney(m.variance) : signedPct(m.variancePct),
+    },
+    secMin: isMoney ? Math.min(...monthly.map((m) => m.variance)) : Math.min(...monthly.map((m) => m.variancePct)),
+    secMax: isMoney ? Math.max(...monthly.map((m) => m.variance)) : Math.max(...monthly.map((m) => m.variancePct)),
+    fmtSec: (v) => isMoney ? `$${NF0.format(v)}M` : `${v}%`,
+  });
+
+  // 03 — Desvío por rubro (horizontal)
+  horizontalChart(document.getElementById("chart3"), d.ordered, state.rubric);
+
+  // 05 — Descomposición precio/cantidad
+  const s = d.selected;
+  verticalChart(document.getElementById("chart5"), {
+    height: 230, left: 50, top: 16,
+    data: [
+      { name: "Efecto cantidad", value: d.qtyEffect },
+      { name: "Efecto precio", value: d.priceEffect },
+      { name: "Desvío total", value: s.variance / 1e6 },
+    ],
+    xKey: "name",
+    series: [{ key: "value", name: "Valor", tip: (r) => signedMoney(r.value) }],
+    min: Math.min(0, d.qtyEffect, d.priceEffect, s.variance / 1e6),
+    max: Math.max(d.qtyEffect, d.priceEffect, s.variance / 1e6),
+    fmtMain: (v) => `$${NF0.format(v)}M`,
+    barMax: 64,
+  });
+
+  // 06 — Pareto
+  verticalChart(document.getElementById("chart6"), {
+    height: 300, left: 52, top: 18, rotateX: true, barMax: 40,
+    data: d.pareto, xKey: "name",
+    series: [{ key: "variance", name: "Desvío", fill: COLORS.amber, tip: (r) => money(r.variance) }],
+    min: 0, max: Math.max(...d.pareto.map((p) => p.variance)),
+    fmtMain: (v) => `$${NF0.format(v)}M`,
+    line: { key: "cumulative", name: "% acumulado", tip: (r) => `${r.cumulative.toFixed(1)} %` },
+    secDomain: { lo: 0, hi: 100, step: 25 },
+    fmtSec: (v) => `${v}%`,
+    refLine: 80,
+  });
+}
+
+// ============ Eventos ============
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-set]");
+  if (!btn) return;
+  const { set, value } = btn.dataset;
+  if (set === "summary") state.summary = value;
+  if (set === "evolution") state.evolution = value;
+  if (set === "rubric") state.rubric = value;
+  render();
+});
+document.addEventListener("change", (e) => {
+  if (e.target.id === "rubric-select") { state.selectedRubric = e.target.value; render(); }
+});
+let resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => render(), 150);
+});
+
+render();
+</script>
+</body>
+</html>

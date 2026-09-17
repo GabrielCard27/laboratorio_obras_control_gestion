@@ -1,0 +1,30 @@
+/* =========================================================
+   TOKENS — paleta y tipografía compartidas del proyecto.
+   Los módulos existentes (EDA, Presupuestos) son autocontenidos
+   y ya usan estos mismos valores en su propio <style>; este
+   archivo es la referencia única para el shell y para módulos
+   nuevos que quieran heredarlos en vez de duplicarlos.
+   ========================================================= */
+:root{
+  --bg:#F4F6F8;
+  --surface:#FFFFFF;
+
+  --header-dark:#16324F;   /* azul oscuro — encabezado y navegación del shell */
+  --primary:#2C5F7C;       /* azul petróleo — color principal / acciones */
+  --secondary:#8B7FE8;     /* violeta — acentos secundarios */
+
+  --text:#1A2733;
+  --text-sec:#5C6B77;
+  --border:#E4E8EC;
+
+  --positivo:#3F9670;      /* verde/teal — indicadores positivos */
+  --atencion:#E2A33D;      /* ámbar — advertencias */
+  --critico:#D6534A;       /* rojo — únicamente crítico */
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  --radius:10px;
+  --shadow-sm: 0 1px 2px rgba(16,24,32,.05);
+  --shadow-md: 0 2px 10px rgba(16,24,32,.06);
+}
