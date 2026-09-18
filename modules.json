@@ -1,0 +1,75 @@
+{
+  "project": {
+    "name": "Laboratorio de Control de Gestión",
+    "obra": "Alumbrado Público RP16",
+    "periodo": "Enero 2026 — Julio 2026"
+  },
+  "modules": [
+    {
+      "id": "M01",
+      "key": "eda",
+      "title": "Exploración de Datos",
+      "description": "Distribución, tendencias, correlaciones y valores atípicos de la obra.",
+      "icon": "📊",
+      "path": "modules/eda/index.html",
+      "status": "active",
+      "order": 1,
+      "version": "1.1"
+    },
+    {
+      "id": "M02",
+      "key": "presupuestos",
+      "title": "Presupuestos y Desvíos",
+      "description": "Dónde se produce el desvío respecto de lo presupuestado y qué lo explica.",
+      "icon": "💰",
+      "path": "modules/presupuestos/index.html",
+      "status": "active",
+      "order": 2,
+      "version": "1.0"
+    },
+    {
+      "id": "M03",
+      "key": "conciliacion",
+      "title": "Conciliación de Bancos/Tarjetas",
+      "description": "Conciliación de movimientos bancarios y de tarjetas con la contabilidad de obra.",
+      "icon": "🏦",
+      "path": "modules/conciliacion/index.html",
+      "status": "planned",
+      "order": 3,
+      "version": "0.0"
+    },
+    {
+      "id": "M04",
+      "key": "flota",
+      "title": "Evaluación de Flota",
+      "description": "Análisis económico y operativo de vehículos y equipos.",
+      "icon": "🚚",
+      "path": "modules/flota/index.html",
+      "status": "planned",
+      "order": 4,
+      "version": "0.0"
+    },
+    {
+      "id": "M05",
+      "key": "control-gestion",
+      "title": "Control de Gestión",
+      "description": "Panel integral de indicadores de control de gestión de la obra.",
+      "icon": "🧭",
+      "path": "modules/control-gestion/index.html",
+      "status": "planned",
+      "order": 5,
+      "version": "0.0"
+    },
+    {
+      "id": "M06",
+      "key": "gps",
+      "title": "GPS",
+      "description": "Seguimiento georreferenciado de equipos y frentes de obra.",
+      "icon": "📍",
+      "path": "modules/gps/index.html",
+      "status": "planned",
+      "order": 6,
+      "version": "0.0"
+    }
+  ]
+}
