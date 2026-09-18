@@ -17,7 +17,7 @@ Sitio 100% estático: HTML + CSS + JS planos, sin build step ni framework.
 /config/modules.json     Registro de módulos (dato — no código)
 /modules/eda/                 M01 — EDA / Exploración de Datos (activo)
 /modules/presupuestos/        M02 — Presupuestos y Desvíos (activo)
-/modules/diagnostico-desvios/ M03 — Diagnóstico de Desvíos (placeholder, sin lógica todavía)
+/modules/diagnostico-desvios/ M03 — Diagnóstico de Desvíos (activo)
 /modules/predictivo/          M04 — Análisis Predictivo (placeholder, sin lógica todavía)
 /modules/decision/            M05 — Decisión / Análisis de Escenarios (placeholder, sin lógica todavía)
 ```
