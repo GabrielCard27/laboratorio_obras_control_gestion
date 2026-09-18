@@ -9,6 +9,8 @@ Sitio 100% estático: HTML + CSS + JS planos, sin build step ni framework.
 
 ```
 /index.html              Panel General (shell): header, resumen, grilla de módulos
+/favicon.png             Ícono del proyecto (512×512)
+/preview.png             Portada del proyecto para LinkedIn/WhatsApp (1200×630)
 /assets/css/tokens.css   Paleta y tipografía compartidas
 /assets/css/shell.css    Estilos exclusivos del shell
 /assets/js/shell.js      Lee config/modules.json y renderiza el panel
@@ -80,30 +82,25 @@ automáticamente.
 
 ## Ícono y vista previa al compartir en LinkedIn (Vercel + GitHub)
 
-Son dos cosas distintas y hay que resolver cada una:
+Son dos cosas distintas, y ya están las dos resueltas con archivos reales (no placeholders):
 
-**1. Favicon (ícono de la pestaña del navegador)**
-Ya está agregado en `index.html` y en cada módulo, como un emoji embebido en el propio HTML
-(`<link rel="icon" href="data:image/svg+xml,...">`). No requiere ningún archivo — funciona apenas
-se despliega.
+**1. Favicon** — `/favicon.png` (512×512), referenciado en `index.html` y en cada módulo con
+`<link rel="icon" type="image/png" href="/favicon.png">`.
 
-**2. Tarjeta de vista previa (lo que se ve al pegar el link en LinkedIn, sobre todo en celular)**
-Esto lo controlan las etiquetas `og:image` / `twitter:image` en el `<head>` de `index.html`
-(ya agregadas), pero necesitan una imagen real para funcionar:
+**2. Tarjeta de vista previa** (lo que se ve al pegar el link en LinkedIn) — `/preview.png`
+(1200×630), referenciado por `og:image` / `twitter:image` en el `<head>` de `index.html`, con
+`og:url` y `<link rel="canonical">` ya apuntando a
+`https://laboratorio-obras-control-gestion.vercel.app/`.
 
-1. Exportar una imagen de 1200×630px (el diseño tipo "Control de Gestión de Obras" que ya tenés
-   en Canva sirve perfecto) y guardarla como `assets/og-image.png`.
-2. Una vez desplegado en Vercel, reemplazar `TU-DOMINIO` en `index.html` por el dominio real
-   (ej. `laboratorio-cdg.vercel.app`) en las 4 etiquetas `og:image`, `og:url`, `twitter:image`.
-3. En el repositorio de GitHub: **Settings → General → Social preview → Upload an image**
-   (recomendado 1280×640px). Esto es independiente de las etiquetas `og:` — GitHub usa su propia
-   configuración para la vista previa del *repositorio* (no de tu sitio desplegado).
-4. LinkedIn cachea las vistas previas agresivamente: después de subir la imagen, probar con el
-   **LinkedIn Post Inspector** (https://www.linkedin.com/post-inspector/) pegando la URL — eso
-   fuerza a LinkedIn a releer la imagen antes de que la compartas en un post real.
+Si en algún momento cambia el dominio de Vercel, hay que actualizar esa misma URL en 4 lugares
+de `index.html`: `canonical`, `og:image`, `og:url`, `twitter:image`.
 
-En celular, LinkedIn recorta la tarjeta de forma más ajustada que en desktop — conviene que el
-texto/logo del diseño quede centrado y no pegado a los bordes de la imagen de 1200×630.
+En GitHub, la vista previa del *repositorio* (distinta de la del sitio) se configura aparte en
+**Settings → General → Social preview → Upload an image** — `preview.png` también sirve ahí.
+
+LinkedIn cachea agresivamente: después de publicar, probar con el **LinkedIn Post Inspector**
+(https://www.linkedin.com/post-inspector/) pegando la URL para forzar que relea la imagen antes
+de compartirla en un post real.
 
 ## Conectar una fuente de datos real (Supabase u otra)
 
