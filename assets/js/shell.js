@@ -23,12 +23,23 @@ function moduleCardHtml(m){
       <span class="mcard-id">${m.id}</span>
     </div>
     <h3>${m.title}</h3>
+    ${m.subtitle?`<div class="mcard-subtitle">${m.subtitle}</div>`:''}
     <p>${m.description}</p>
     <div class="mcard-foot">
       <span>v${m.version}</span>
       <span class="status-pill ${m.status}">${STATUS_LABEL[m.status] || m.status}</span>
     </div>
   </${tag}>`;
+}
+
+function flujoHtml(flujo){
+  if(!flujo || !flujo.length) return '';
+  return `<div class="flujo">${flujo.map((f,i)=>`
+    ${i>0?'<span class="flujo-arrow">→</span>':''}
+    <div class="flujo-step">
+      <div class="flujo-label">${f.label}</div>
+      <div class="flujo-note">${f.note}</div>
+    </div>`).join('')}</div>`;
 }
 
 function overviewHtml(registry){
@@ -65,8 +76,12 @@ async function renderShell(){
     const modules = [...registry.modules].sort((a,b)=>a.order-b.order);
     document.getElementById('overview').innerHTML = overviewHtml(registry);
     document.getElementById('module-grid').innerHTML = modules.map(moduleCardHtml).join('');
+    const flujoEl = document.getElementById('flujo');
+    if(flujoEl) flujoEl.innerHTML = flujoHtml(registry.flujo);
     document.title = registry.project.name;
     document.getElementById('brand-title').textContent = registry.project.name;
+    const tagEl = document.getElementById('brand-tagline');
+    if(tagEl && registry.project.tagline) tagEl.textContent = registry.project.tagline;
   }catch(err){
     app.innerHTML = `<div class="ov-card" style="border-color:var(--critico)">
       <div class="ov-label">Error</div>
