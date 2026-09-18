@@ -3,29 +3,502 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diagnóstico de Desvíos — En construcción</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="../../assets/css/tokens.css">
+<title>Diagnóstico de Desvíos — Alumbrado Público RP16</title>
+<link rel="icon" type="image/png" href="/favicon.png">
 <style>
-  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);}
-  .topbar{background:var(--header-dark);padding:8px 16px;}
-  .topbar a{color:#fff;opacity:.85;font-size:12px;text-decoration:none;}
-  .wrap{max-width:620px;margin:80px auto;padding:0 20px;text-align:center;}
-  .badge{display:inline-block;font-family:var(--font-mono);font-size:11px;color:var(--text-sec);border:1px solid var(--border);border-radius:20px;padding:4px 12px;margin-bottom:16px;}
-  h1{font-size:20px;margin:0 0 10px;}
-  p{color:var(--text-sec);font-size:13.5px;line-height:1.6;}
+:root{
+  --bg:#F7F8FA;
+  --surface:#FFFFFF;
+  --text:#1A2733;
+  --text-sec:#5C6B77;
+  --border:#E4E8EC;
+
+  --neutral:#2C5F7C;
+  --secondary:#8B7FE8;
+  --productividad:#16A6A3;
+  --atencion:#E2A33D;
+  --critico:#D6534A;
+  --positivo:#3F9670;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;}
+h1,h3{margin:0;color:var(--text);}
+p{margin:0;}
+
+.page{min-height:100vh;display:flex;flex-direction:column;padding:20px 20px 40px;gap:16px;max-width:1320px;margin:0 auto;}
+
+.modtag{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--neutral);text-transform:uppercase;}
+.top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-top:2px;}
+.top h1{font-size:21px;font-weight:700;letter-spacing:-0.01em;}
+.top h1 span{color:var(--neutral);}
+.top .sub{color:var(--text-sec);font-size:12.5px;margin-top:3px;}
+.top .obra{text-align:right;font-size:11px;color:var(--text-sec);}
+.top .obra b{display:block;color:var(--text);font-size:13px;font-weight:600;}
+.top .obra span{display:block;}
+
+.summary{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;}
+.summary::-webkit-scrollbar{display:none;}
+.chip{flex:none;scroll-snap-align:start;display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:8px 13px;font-size:11.5px;color:var(--text);white-space:nowrap;box-shadow:0 1px 2px rgba(16,24,32,.04);}
+.chip .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.chip b{font-weight:600;}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:760px){ .grid{grid-template-columns:1fr;gap:16px;} }
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;box-shadow:0 1px 2px rgba(16,24,32,.04), 0 2px 10px rgba(16,24,32,.05);display:flex;flex-direction:column;min-width:0;}
+.chead{display:flex;align-items:center;gap:11px;}
+.badge{flex:none;width:26px;height:26px;border-radius:6px;background:var(--neutral);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11.5px;font-weight:700;}
+.ctitle{flex:1;min-width:0;}
+.ctitle h3{font-size:16px;font-weight:600;line-height:1.25;}
+.ctitle .ctype{font-size:11.5px;color:var(--text-sec);margin-top:2px;}
+.statusdot{flex:none;width:9px;height:9px;border-radius:50%;margin-left:6px;}
+.statusdot[data-lvl="positivo"]{background:var(--positivo);}
+.statusdot[data-lvl="atencion"]{background:var(--atencion);}
+.statusdot[data-lvl="critico"]{background:var(--critico);}
+.statusdot[data-lvl="neutral"]{background:var(--neutral);}
+
+.panel-controls{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+.panel-controls select{font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text-sec);font-family:var(--font-ui);}
+
+.chart-wrap{width:100%;margin-top:14px;}
+.chart-wrap svg{width:100%;height:100%;display:block;font-variant-numeric:tabular-nums;}
+
+.headline{font-size:13px;color:var(--text);margin-top:14px;font-variant-numeric:tabular-nums;}
+.headline b{font-weight:700;}
+
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--text-sec);}
+.legend-row .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px;}
+
+.diag-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px;font-variant-numeric:tabular-nums;}
+.diag-table th{text-align:left;font-size:10px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:.03em;padding:6px 8px;border-bottom:1px solid var(--border);}
+.diag-table td{padding:7px 8px;border-bottom:1px solid var(--border);}
+.diag-table tr:last-child td{border-bottom:none;}
+.cause-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.cause-tag.precio{background:rgba(139,127,232,.14);color:var(--secondary);}
+.cause-tag.cantidad{background:rgba(22,166,163,.14);color:var(--productividad);}
+
+.obs{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+.obs .otag{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--text-sec);text-transform:uppercase;display:block;margin-bottom:4px;}
+.obs .oline{font-size:12.5px;line-height:1.55;color:var(--text);}
+.obs details{margin-top:9px;}
+.obs summary{font-size:11.5px;color:var(--neutral);font-weight:600;cursor:pointer;list-style:none;}
+.obs summary::-webkit-details-marker{display:none;}
+.obs summary::after{content:" \203A";}
+.obs details[open] summary::after{content:" \2304";}
+.obs .rec{font-size:12px;line-height:1.55;color:var(--text-sec);margin-top:7px;}
+
+.note{font-size:10.5px;line-height:1.5;color:var(--text-sec);font-style:italic;margin-top:10px;}
 </style>
 </head>
 <body>
-  <div class="topbar"><a href="../../index.html">&larr; Panel General</a></div>
-  <div class="wrap">
-    <div class="badge">M03 · v0.0 · Planificado</div>
-    <h1>Diagnóstico de Desvíos</h1>
-    <p>Análisis de causas y factores: qué variables (cantidades, precios, productividad, ejecución)
-    explican los desvíos detectados en el módulo 02. Todavía no tiene lógica ni datos
-    implementados. Cuando se desarrolle, se agregará aquí sin necesidad de modificar el
-    Panel General ni los demás módulos — solo se actualizará su <code>status</code> en
-    <code>config/modules.json</code>.</p>
-  </div>
+<div style="background:#16324F;padding:8px 16px;">
+  <a href="../../index.html" style="color:#fff;opacity:.85;font:12px -apple-system,sans-serif;text-decoration:none;">&larr; Panel General</a>
+</div>
+<div id="app" class="page"></div>
+
+<script>
+/* =========================================================
+   DATA — mismo dataset base que EDA (M01) y Presupuestos y
+   Desvíos (M02): mismos 10 rubros, mismos montos y avances
+   mensuales de la obra Alumbrado Público RP16.
+   ========================================================= */
+const MESES = [
+  {id:'2026-01', label:'Ene 26'}, {id:'2026-02', label:'Feb 26'},
+  {id:'2026-03', label:'Mar 26'}, {id:'2026-04', label:'Abr 26'},
+  {id:'2026-05', label:'May 26'}, {id:'2026-06', label:'Jun 26'},
+  {id:'2026-07', label:'Jul 26'}
+];
+
+const RUBROS = [
+  {id:'columnas',       nombre:'Columnas',                 corto:'Columnas',   unidad:'u',
+    presupuesto:[0,0,5200,9100,7800,3900,0], costo:[0,0,4576,10010,8970,3510,0], avance:[0,0,20,35,30,15,0],
+    horas:[0,0,177,481,339,187,0], cantidadReal:179.5, cantidadPresup:170},
+  {id:'luminarias',     nombre:'Luminarias LED',           corto:'Luminarias', unidad:'u',
+    presupuesto:[0,0,0,1700,5100,11900,15300], costo:[0,0,0,2006,4335,34272,13464], avance:[0,0,0,5,15,35,45],
+    horas:[0,0,0,47,213,339,390], cantidadReal:344.2, cantidadPresup:340},
+  {id:'cableado',       nombre:'Cableado',                 corto:'Cableado',   unidad:'m',
+    presupuesto:[0,0,0,6000,9000,9000,6000], costo:[0,0,0,6900,8100,10620,5100], avance:[0,0,0,20,30,30,20],
+    horas:[0,0,0,241,484,274,269], cantidadReal:14944.5, cantidadPresup:14200},
+  {id:'tableros',       nombre:'Tableros Eléctricos',      corto:'Tableros',   unidad:'u',
+    presupuesto:[0,0,0,0,4000,6400,5600], costo:[0,0,0,0,4720,5440,6720], avance:[0,0,0,0,25,40,35],
+    horas:[0,0,0,0,159,317,223], cantidadReal:14.1, cantidadPresup:13},
+  {id:'canalizaciones', nombre:'Canalizaciones',           corto:'Canaliz.',   unidad:'m',
+    presupuesto:[0,2800,4900,4200,2100,0,0], costo:[0,2380,5880,3696,2310,0,0], avance:[0,20,35,30,15,0,0],
+    horas:[0,149,209,185,128,0,0], cantidadReal:5808.7, cantidadPresup:5700},
+  {id:'excavacion',     nombre:'Excavación',               corto:'Excavación', unidad:'m³',
+    presupuesto:[2800,3200,2000,0,0,0,0], costo:[3220,2880,2360,0,0,0,0], avance:[35,40,25,0,0,0,0],
+    horas:[142,211,88,0,0,0,0], cantidadReal:2603.9, cantidadPresup:2550},
+  {id:'hormigon',       nombre:'Hormigón',                 corto:'Hormigón',   unidad:'m³',
+    presupuesto:[2000,3000,3000,2000,0,0,0], costo:[1800,3540,2550,2400,0,0,0], avance:[20,30,30,20,0,0,0],
+    horas:[120,120,177,109,0,0,0], cantidadReal:480.9, cantidadPresup:470},
+  {id:'manoobra',       nombre:'Mano de Obra',             corto:'M. Obra',    unidad:'HH',
+    presupuesto:[1600,2400,3200,3600,3600,3200,2400], costo:[1840,2160,3776,3060,4320,2816,2640], avance:[8,12,16,18,18,16,12],
+    horas:[132,259,230,440,363,245,248], cantidadReal:1917, cantidadPresup:1850},
+  {id:'equipos',        nombre:'Equipos',                  corto:'Equipos',    unidad:'h',
+    presupuesto:[1200,1800,1200,2400,1800,2400,1200], costo:[900,2430,840,3000,1404,2880,1560], avance:[10,15,10,20,15,20,10],
+    horas:[36,36,35,66,45,69,28], cantidadReal:315, cantidadPresup:290},
+  {id:'senalizacion',   nombre:'Señalización y Seguridad', corto:'Señaliz.',   unidad:'u',
+    presupuesto:[480,600,600,720,900,1200,1500], costo:[566,510,720,634,990,1380,1350], avance:[8,10,10,12,15,20,25],
+    horas:[19,35,29,35,61,55,90], cantidadReal:59.8, cantidadPresup:58}
+];
+
+/* =========================================================
+   CÁLCULOS — todo se deriva de los datos anteriores
+   ========================================================= */
+const A = {
+  mean(arr){ if(!arr.length) return 0; return arr.reduce((a,b)=>a+b,0)/arr.length; },
+  pearson(x,y){
+    const n=x.length; if(n<3) return 0;
+    const mx=A.mean(x), my=A.mean(y);
+    let num=0,dx=0,dy=0;
+    for(let i=0;i<n;i++){ num+=(x[i]-mx)*(y[i]-my); dx+=(x[i]-mx)**2; dy+=(y[i]-my)**2; }
+    if(dx===0||dy===0) return 0;
+    return num/Math.sqrt(dx*dy);
+  }
+};
+
+RUBROS.forEach(r=>{
+  r.presupuestoTotal = r.presupuesto.reduce((a,b)=>a+b,0);
+  r.costoTotal = r.costo.reduce((a,b)=>a+b,0);
+  r.horasTotal = r.horas.reduce((a,b)=>a+b,0);
+  r.desvioAbs = r.costoTotal - r.presupuestoTotal;
+  r.desvioPct = r.presupuestoTotal>0 ? r.desvioAbs/r.presupuestoTotal*100 : 0;
+  r.precioPresup = r.cantidadPresup>0 ? r.presupuestoTotal/r.cantidadPresup : 0;
+  r.precioReal = r.cantidadReal>0 ? r.costoTotal/r.cantidadReal : 0;
+  r.efectoCantidad = (r.cantidadReal - r.cantidadPresup) * r.precioPresup;
+  r.efectoPrecio = (r.precioReal - r.precioPresup) * r.cantidadReal;
+  // consistencia avance-horas: correlación entre avance mensual y horas mensuales,
+  // sólo en meses con actividad (costo>0) para no contaminar con meses inactivos
+  const activeIdx = r.costo.map((c,i)=>c>0?i:-1).filter(i=>i>=0);
+  r.nActivo = activeIdx.length;
+  r.consistencia = A.pearson(activeIdx.map(i=>r.avance[i]), activeIdx.map(i=>r.horas[i]));
+});
+
+const TOTAL_PRESUPUESTO = RUBROS.reduce((a,r)=>a+r.presupuestoTotal,0);
+const TOTAL_COSTO = RUBROS.reduce((a,r)=>a+r.costoTotal,0);
+const TOTAL_DESVIO_ABS = TOTAL_COSTO - TOTAL_PRESUPUESTO;
+const TOTAL_DESVIO_PCT = TOTAL_DESVIO_ABS/TOTAL_PRESUPUESTO*100;
+const TOTAL_EFECTO_CANTIDAD = RUBROS.reduce((a,r)=>a+r.efectoCantidad,0);
+const TOTAL_EFECTO_PRECIO = RUBROS.reduce((a,r)=>a+r.efectoPrecio,0);
+
+function presupuestoMensual(){ return MESES.map((m,i)=> RUBROS.reduce((a,r)=>a+r.presupuesto[i],0)); }
+function costoMensual(){ return MESES.map((m,i)=> RUBROS.reduce((a,r)=>a+r.costo[i],0)); }
+function horasMensual(){ return MESES.map((m,i)=> RUBROS.reduce((a,r)=>a+r.horas[i],0)); }
+function avanceMensualPonderado(){
+  return MESES.map((m,i)=>{
+    let num=0, den=0;
+    RUBROS.forEach(r=>{ num+=r.presupuestoTotal*r.avance[i]; den+=r.presupuestoTotal; });
+    return den? num/den : 0;
+  });
+}
+
+/* =========================================================
+   FORMATO
+   ========================================================= */
+function fmt(n){ if(n===null||n===undefined||isNaN(n)) return '—';
+  return new Intl.NumberFormat('es-AR',{maximumFractionDigits: Math.abs(n)<10? 1:0}).format(n); }
+function fmtCompact(n){
+  if(n===null||n===undefined||isNaN(n)) return '—';
+  const sign=n<0?'-':''; const abs=Math.abs(n);
+  if(abs>=1000) return sign+(abs/1000).toFixed(1).replace('.',',').replace(',0','')+'k';
+  return fmt(n);
+}
+function fmtPct(n,decimals){ if(n===null||isNaN(n)) return '—'; const d=decimals===undefined?1:decimals;
+  return (n>=0?'+':'')+n.toFixed(d)+'%'; }
+function fmtSigned(n){ return (n>=0?'+':'')+fmt(n); }
+
+function colorForDesvio(pct){
+  if(pct<0) return 'var(--positivo)';
+  if(pct<5) return 'var(--neutral)';
+  if(pct<15) return 'var(--atencion)';
+  return 'var(--critico)';
+}
+function colorForConsistencia(r){
+  if(r>=0.7) return 'var(--positivo)';
+  if(r>=0.4) return 'var(--neutral)';
+  if(r>=0.15) return 'var(--atencion)';
+  return 'var(--critico)';
+}
+
+/* =========================================================
+   CHARTS
+   ========================================================= */
+const CH = {
+  twoBar(items){
+    // items: [{label, value, color}]
+    const W=680,H=260,M={t:16,r:16,b:34,l:16};
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    const max=Math.max(...items.map(it=>Math.abs(it.value)),1)*1.15;
+    const slot=innerW/items.length, barW=Math.min(slot*0.42,110);
+    let bars='', labels='', grid='';
+    for(let t=0;t<=2;t++){ const v=max*t/2; const y=M.t+innerH-(v/max)*innerH;
+      grid+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="var(--border)" stroke-dasharray="2,3"/>`; }
+    items.forEach((it,i)=>{
+      const cx=M.l+slot*i+slot/2;
+      const h=Math.abs(it.value)/max*innerH;
+      const y=M.t+innerH-h;
+      bars+=`<rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${h}" fill="${it.color}" rx="4"/>
+        <text x="${cx}" y="${y-10}" font-size="14" font-weight="700" text-anchor="middle" fill="${it.color}">${fmtSigned(it.value)}</text>`;
+      labels+=`<text x="${cx}" y="${M.t+innerH+20}" font-size="11.5" text-anchor="middle" fill="var(--text-sec)">${it.label}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${grid}${bars}${labels}</svg>`;
+  },
+
+  lineChart(seriesArr, categories){
+    const W=680,H=320,M={t:20,r:16,b:32,l:44};
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    let allVals=[]; seriesArr.forEach(s=>allVals=allVals.concat(s.values));
+    const min=Math.min(0,...allVals), max=Math.max(...allVals,1)*1.05;
+    const n=categories.length;
+    const xFor=i=> M.l + (n<=1?0:(i/(n-1))*innerW);
+    const yFor=v=> M.t+innerH-((v-min)/((max-min)||1))*innerH;
+    let grid='';
+    for(let t=0;t<=3;t++){ const v=min+(max-min)*t/3; const y=yFor(v);
+      grid+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="var(--border)" stroke-dasharray="2,3"/>
+             <text x="${M.l-8}" y="${y+4}" font-size="10" text-anchor="end" fill="var(--text-sec)">${fmtCompact(v)}%</text>`; }
+    let xlabels=categories.map((c,i)=>`<text x="${xFor(i)}" y="${M.t+innerH+20}" font-size="10.5" text-anchor="middle" fill="var(--text-sec)">${c.replace(' 26','')}</text>`).join('');
+    let lines='';
+    seriesArr.forEach(s=>{
+      const pts=s.values.map((v,i)=>`${xFor(i)},${yFor(v)}`).join(' ');
+      lines+=`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2.4"/>`;
+      s.values.forEach((v,i)=> lines+=`<circle cx="${xFor(i)}" cy="${yFor(v)}" r="3" fill="${s.color}"/>`);
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${grid}${lines}${xlabels}</svg>`;
+  },
+
+  horizontalBars(items, colorFn, valueFmt){
+    const rowH=32, W=680, top=10, left=112, right=64;
+    const H = top + items.length*rowH + 10;
+    const innerW = W-left-right;
+    const center = left;
+    const maxAbs = Math.max(...items.map(it=>Math.abs(it.value)),0.1)*1.1;
+    let bars='';
+    items.forEach((it,i)=>{
+      const y = top + i*rowH;
+      const w = Math.abs(it.value)/maxAbs*innerW;
+      bars+=`<text x="${left-8}" y="${y+rowH/2+4}" font-size="11.5" text-anchor="end" fill="var(--text)">${it.label}</text>
+        <rect x="${center}" y="${y+7}" width="${Math.max(w,2)}" height="${rowH-16}" fill="${colorFn(it)}" rx="3"/>
+        <text x="${center+w+8}" y="${y+rowH/2+4}" font-size="11.5" font-weight="700" fill="var(--text)">${valueFmt(it.value)}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${bars}</svg>`;
+  },
+
+  tornado(items){
+    // items: [{label, precio, cantidad}] — barras divergentes desde una franja central de etiquetas
+    const rowH=32, W=680, top=10, right=16, left=16, labelW=96;
+    const H = top + items.length*rowH + 10;
+    const halfW = (W-left-right-labelW)/2;
+    const centerX = left+halfW;
+    const rightStart = centerX+labelW;
+    const maxAbs = Math.max(...items.map(it=>Math.max(Math.abs(it.precio),Math.abs(it.cantidad))),1)*1.15;
+    let bars='', mid='';
+    items.forEach((it,i)=>{
+      const y = top + i*rowH;
+      const yc = y+rowH/2;
+      const wPrecio = Math.abs(it.precio)/maxAbs*halfW;
+      const wCantidad = Math.abs(it.cantidad)/maxAbs*halfW;
+      bars+=`<rect x="${centerX-wPrecio}" y="${y+7}" width="${wPrecio}" height="${rowH-16}" fill="var(--secondary)" rx="3"/>`;
+      bars+=`<rect x="${rightStart}" y="${y+7}" width="${wCantidad}" height="${rowH-16}" fill="var(--productividad)" rx="3"/>`;
+      mid+=`<text x="${centerX+labelW/2}" y="${yc+4}" font-size="11" text-anchor="middle" fill="var(--text)">${it.label}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${bars}${mid}</svg>`;
+  },
+
+  donut(segments){
+    const W=320,H=260, cx=110, cy=130, r=78, rInner=48;
+    const total = segments.reduce((a,s)=>a+s.value,0)||1;
+    let angle=-90, paths='', legend='';
+    segments.forEach((s,i)=>{
+      const frac = s.value/total;
+      const sweep = frac*360;
+      const large = sweep>180?1:0;
+      const a0 = angle*Math.PI/180, a1=(angle+sweep)*Math.PI/180;
+      const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0);
+      const x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+      const xi0=cx+rInner*Math.cos(a1), yi0=cy+rInner*Math.sin(a1);
+      const xi1=cx+rInner*Math.cos(a0), yi1=cy+rInner*Math.sin(a0);
+      paths+=`<path d="M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} L ${xi0} ${yi0} A ${rInner} ${rInner} 0 ${large} 0 ${xi1} ${yi1} Z" fill="${s.color}"/>`;
+      legend+=`<circle cx="230" cy="${70+i*34}" r="5" fill="${s.color}"/>
+        <text x="244" y="${74+i*34}" font-size="12.5" fill="var(--text)">${s.label}</text>
+        <text x="244" y="${90+i*34}" font-size="11" fill="var(--text-sec)">${fmtPct(frac*100,0)}</text>`;
+      angle+=sweep;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${paths}${legend}</svg>`;
+  }
+};
+
+/* =========================================================
+   PANELES
+   ========================================================= */
+function buildPanel1(){
+  const items=[
+    {label:'Efecto Cantidad', value:TOTAL_EFECTO_CANTIDAD, color:'var(--productividad)'},
+    {label:'Efecto Precio', value:TOTAL_EFECTO_PRECIO, color:'var(--secondary)'}
+  ];
+  const dominante = Math.abs(TOTAL_EFECTO_PRECIO) > Math.abs(TOTAL_EFECTO_CANTIDAD) ? 'precio' : 'cantidad';
+  return {
+    badge:'01', title:'Factores del Desvío (Obra Completa)', type:'Efecto cantidad vs. efecto precio, agregado',
+    status: colorForDesvio(TOTAL_DESVIO_PCT)==='var(--critico)'?'critico':'atencion',
+    chart: CH.twoBar(items),
+    headline:`Desvío total: <b>${fmtSigned(TOTAL_DESVIO_ABS)} miles $</b> (${fmtPct(TOTAL_DESVIO_PCT)})`,
+    obs:`A nivel de toda la obra, el efecto ${dominante} explica la mayor parte del desvío total (${fmtSigned(dominante==='precio'?TOTAL_EFECTO_PRECIO:TOTAL_EFECTO_CANTIDAD)} miles $ sobre ${fmtSigned(TOTAL_DESVIO_ABS)} miles $ de desvío).`,
+    rec:`Esto no identifica automáticamente una causa raíz — conviene revisar el panel 04 (matriz por rubro) para ver si el efecto dominante se concentra en uno o pocos rubros, o si está distribuido.`
+  };
+}
+
+function buildPanel2(){
+  const horasMonthly = horasMensual();
+  const totalHoras = horasMonthly.reduce((a,b)=>a+b,0)||1;
+  const horasPct = horasMonthly.map(v=>v/totalHoras*100);
+  const avanceMens = avanceMensualPonderado();
+  const series=[
+    {name:'Horas del mes', color:'var(--productividad)', values:horasPct},
+    {name:'Avance del mes', color:'var(--secondary)', values:avanceMens}
+  ];
+  const brechas = horasPct.map((h,i)=>h-avanceMens[i]);
+  const maxBrecha = Math.max(...brechas);
+  const maxIdx = brechas.indexOf(maxBrecha);
+  return {
+    badge:'02', title:'Horas Ejecutadas vs. Avance Físico', type:'Lectura mensual (% del total)',
+    status: maxBrecha>10?'atencion':'positivo',
+    chart: CH.lineChart(series, MESES.map(m=>m.label)),
+    headline:`<span style="color:var(--productividad)">■</span> Horas &nbsp; <span style="color:var(--secondary)">■</span> Avance &nbsp;·&nbsp; mayor diferencia <b>${fmt(maxBrecha)} p.p.</b> (${MESES[maxIdx].label})`,
+    obs: maxBrecha>10
+      ? `En ${MESES[maxIdx].label} el % de horas ejecutadas superó claramente al % de avance físico logrado ese mes — posible caída puntual de productividad.`
+      : `Las horas ejecutadas acompañan de forma razonable al avance físico mes a mes, sin brechas grandes.`,
+    rec:`Contrastar los meses con mayor brecha contra el panel 03 (consistencia por rubro) para identificar si el efecto está concentrado en algún rubro en particular.`
+  };
+}
+
+function buildPanel3(){
+  const items = RUBROS.map(r=>({label:r.corto, full:r.nombre, value:r.consistencia, n:r.nActivo}))
+    .sort((a,b)=>a.value-b.value);
+  const min = items[0];
+  return {
+    badge:'03', title:'Consistencia Avance–Horas por Rubro', type:'Correlación mensual (r), ordenado ascendente',
+    status: min.value<0.15 ? 'atencion' : 'positivo',
+    chart: CH.horizontalBars(items, it=>colorForConsistencia(it.value), v=>v.toFixed(2)),
+    headline:`Menor consistencia: <b>${min.full}</b> (r=${min.value.toFixed(2)}, n=${min.n})`,
+    obs:`${min.full} muestra la relación más débil entre horas ejecutadas y avance físico mes a mes — las horas no siempre acompañan al ritmo de avance de ese rubro.`,
+    rec:`Con pocos meses de actividad por rubro (n entre 3 y 7), estos coeficientes son orientativos, no concluyentes — útiles para priorizar qué rubro revisar primero, no para afirmar una causa.`
+  };
+}
+
+function buildPanel4(){
+  const rows = [...RUBROS].sort((a,b)=>Math.abs(b.desvioAbs)-Math.abs(a.desvioAbs)).map(r=>{
+    const dominante = Math.abs(r.efectoPrecio)>Math.abs(r.efectoCantidad) ? 'precio' : 'cantidad';
+    const efectoDom = dominante==='precio' ? r.efectoPrecio : r.efectoCantidad;
+    const pctExplicado = r.desvioAbs!==0 ? Math.min(Math.abs(efectoDom/r.desvioAbs*100),999) : 0;
+    return { r, dominante, pctExplicado };
+  });
+  const tableRows = rows.map(({r,dominante,pctExplicado})=>`
+    <tr>
+      <td>${r.nombre}</td>
+      <td style="color:${colorForDesvio(r.desvioPct)};font-weight:700;">${fmtPct(r.desvioPct)}</td>
+      <td><span class="cause-tag ${dominante}">${dominante==='precio'?'Precio':'Cantidad'}</span></td>
+      <td>${fmt(pctExplicado)}%</td>
+    </tr>`).join('');
+  const nPrecio = rows.filter(x=>x.dominante==='precio').length;
+  return {
+    badge:'04', title:'Matriz de Causas por Rubro', type:'Diagnóstico individual, ordenado por desvío absoluto',
+    status:'neutral',
+    chart: `<table class="diag-table"><thead><tr><th>Rubro</th><th>Desvío %</th><th>Causa principal</th><th>Explica</th></tr></thead><tbody>${tableRows}</tbody></table>`,
+    headline:`${nPrecio} de 10 rubros tienen a <b>precio</b> como causa principal; ${10-nPrecio} a <b>cantidad</b>.`,
+    obs:`El rubro con mayor desvío absoluto (${rows[0].r.nombre}) tiene como causa principal el efecto ${rows[0].dominante}, que explica cerca del ${fmt(rows[0].pctExplicado)}% de su desvío.`,
+    rec:`Usar esta tabla como punto de partida: un rubro etiquetado "Precio" conviene revisarlo contra proveedores/tipo de cambio; uno etiquetado "Cantidad", contra alcance o mediciones.`
+  };
+}
+
+function buildPanel5(){
+  const items = [...RUBROS].sort((a,b)=>Math.abs(b.desvioAbs)-Math.abs(a.desvioAbs))
+    .map(r=>({label:r.corto, precio:r.efectoPrecio, cantidad:r.efectoCantidad}));
+  return {
+    badge:'05', title:'Precio vs. Cantidad, por Rubro', type:'Efectos en miles $ — violeta: precio · turquesa: cantidad',
+    status:'neutral',
+    chart: CH.tornado(items),
+    obs:`Los rubros con barra violeta más larga (ej. Luminarias LED) tienen su desvío explicado mayormente por precio; los de barra turquesa más larga (ej. Cableado, Columnas), por cantidad ejecutada.`,
+    rec:`Comparar contra el panel 06 del módulo 02 (Precio vs. Cantidad) para el detalle exacto de cantidad/precio presupuestado vs. real de cualquiera de estos rubros.`
+  };
+}
+
+function buildPanel6(){
+  const totalAbs = Math.abs(TOTAL_EFECTO_PRECIO)+Math.abs(TOTAL_EFECTO_CANTIDAD);
+  const segments=[
+    {label:'Efecto Precio', value:Math.abs(TOTAL_EFECTO_PRECIO), color:'#8B7FE8'},
+    {label:'Efecto Cantidad', value:Math.abs(TOTAL_EFECTO_CANTIDAD), color:'#16A6A3'}
+  ];
+  const pctPrecio = Math.abs(TOTAL_EFECTO_PRECIO)/totalAbs*100;
+  const top = [...RUBROS].sort((a,b)=>Math.abs(b.desvioAbs)-Math.abs(a.desvioAbs))[0];
+  return {
+    badge:'06', title:'Síntesis del Diagnóstico', type:'Composición del desvío total de la obra',
+    status: pctPrecio>60?'critico':'atencion',
+    chart: CH.donut(segments),
+    headline:`El desvío de la obra se explica en un <b>${fmt(pctPrecio)}%</b> por precio y un <b>${fmt(100-pctPrecio)}%</b> por cantidad.`,
+    obs:`El factor ${pctPrecio>50?'precio':'cantidad'} domina el desvío total de la obra, impulsado principalmente por ${top.nombre} (mayor desvío absoluto: ${fmtSigned(top.desvioAbs)} miles $).`,
+    rec:`Priorizar la investigación en ${top.nombre} antes que en rubros de menor incidencia — no todo rubro con desvío necesita la misma urgencia de análisis (ver también el Pareto del módulo 02).`
+  };
+}
+
+/* =========================================================
+   RESUMEN EJECUTIVO
+   ========================================================= */
+function buildSummary(){
+  const totalAbs = Math.abs(TOTAL_EFECTO_PRECIO)+Math.abs(TOTAL_EFECTO_CANTIDAD);
+  const pctPrecio = Math.abs(TOTAL_EFECTO_PRECIO)/totalAbs*100;
+  const top = [...RUBROS].sort((a,b)=>Math.abs(b.desvioAbs)-Math.abs(a.desvioAbs))[0];
+  const menorConsist = [...RUBROS].sort((a,b)=>a.consistencia-b.consistencia)[0];
+  return [
+    {dot: pctPrecio>60?'critico':'atencion', text:`Efecto dominante: <b>${pctPrecio>50?'Precio':'Cantidad'}</b> (${fmt(Math.max(pctPrecio,100-pctPrecio))}%)`},
+    {dot: colorForDesvio(top.desvioPct)==='var(--critico)'?'critico':'atencion', text:`Mayor desvío: <b>${top.nombre}</b>`},
+    {dot: colorForConsistencia(menorConsist.consistencia)==='var(--critico)'?'critico':'atencion', text:`Menor consistencia avance-horas: <b>${menorConsist.nombre}</b>`}
+  ];
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function panelHtml(p){
+  const isTable = p.chart.trim().startsWith('<table');
+  const vb = isTable ? null : p.chart.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  const ratio = vb ? `${vb[1]}/${vb[2]}` : null;
+  return `<div class="card">
+    <div class="chead">
+      <div class="badge">${p.badge}</div>
+      <div class="ctitle"><h3>${p.title}</h3><div class="ctype">${p.type}</div></div>
+      <span class="statusdot" data-lvl="${p.status}"></span>
+    </div>
+    ${p.controls?`<div class="panel-controls">${p.controls}</div>`:''}
+    ${isTable ? p.chart : `<div class="chart-wrap" style="aspect-ratio:${ratio}">${p.chart}</div>`}
+    ${p.headline?`<div class="headline">${p.headline}</div>`:''}
+    <div class="obs">
+      <span class="otag">Qué se observa</span>
+      <div class="oline">${p.obs}</div>
+      <details><summary>Qué debería investigarse</summary><div class="rec">${p.rec}</div></details>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const panels=[buildPanel1(),buildPanel2(),buildPanel3(),buildPanel4(),buildPanel5(),buildPanel6()];
+  const chips = buildSummary();
+  const chipsHtml = chips.map(c=>`<div class="chip"><span class="dot" style="background:var(--${c.dot})"></span>${c.text}</div>`).join('');
+  document.getElementById('app').innerHTML = `
+    <div class="modtag">Módulo 03 · Laboratorio de Control de Gestión de Obras</div>
+    <div class="top">
+      <div>
+        <h1>Diagnóstico de <span>Desvíos</span></h1>
+        <div class="sub">Análisis de causas y factores: qué explica los desvíos detectados en presupuesto</div>
+      </div>
+      <div class="obra"><b>Alumbrado Público RP16</b><span>Ene – Jul 2026</span><span>10 rubros · ${fmt(TOTAL_PRESUPUESTO)} miles $ presupuestados</span></div>
+    </div>
+    <div class="summary">${chipsHtml}</div>
+    <div class="grid">${panels.map(panelHtml).join('')}</div>
+  `;
+}
+render();
+</script>
 </body>
 </html>
