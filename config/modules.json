@@ -1,16 +1,24 @@
 {
   "project": {
-    "name": "Laboratorio de Control de Gestión",
+    "name": "Laboratorio de Control de Gestión de Obras",
+    "tagline": "De los datos a la decisión",
     "obra": "Alumbrado Público RP16",
     "periodo": "Enero 2026 — Julio 2026"
   },
+  "flujo": [
+    { "label": "Datos", "note": "Información bruta y dispersa" },
+    { "label": "Información", "note": "Datos organizados y contextualizados" },
+    { "label": "Conocimiento", "note": "Análisis y comprensión" },
+    { "label": "Decisión", "note": "Evaluación de alternativas" }
+  ],
   "modules": [
     {
       "id": "M01",
       "key": "eda",
-      "title": "Exploración de Datos",
-      "description": "Distribución, tendencias, correlaciones y valores atípicos de la obra.",
-      "icon": "📊",
+      "title": "EDA",
+      "subtitle": "Exploración de datos",
+      "description": "Distribuciones, evolución de variables, relaciones entre avance y costos, detección de outliers, correlaciones y análisis por rubro.",
+      "icon": "🔍",
       "path": "modules/eda/index.html",
       "status": "active",
       "order": 1,
@@ -20,7 +28,8 @@
       "id": "M02",
       "key": "presupuestos",
       "title": "Presupuestos y Desvíos",
-      "description": "Dónde se produce el desvío respecto de lo presupuestado y qué lo explica.",
+      "subtitle": "Análisis de la ejecución económica",
+      "description": "Presupuesto vs. ejecución, evolución de desvíos, análisis por rubro, avance físico vs. costo, efecto precio/cantidad e incidencia sobre el desvío total.",
       "icon": "💰",
       "path": "modules/presupuestos/index.html",
       "status": "active",
@@ -29,46 +38,38 @@
     },
     {
       "id": "M03",
-      "key": "conciliacion",
-      "title": "Conciliación de Bancos/Tarjetas",
-      "description": "Conciliación de movimientos bancarios y de tarjetas con la contabilidad de obra.",
-      "icon": "🏦",
-      "path": "modules/conciliacion/index.html",
+      "key": "diagnostico-desvios",
+      "title": "Diagnóstico de Desvíos",
+      "subtitle": "Análisis de causas y factores",
+      "description": "Análisis de las variables que pueden explicar las diferencias detectadas en costos, cantidades, productividad y ejecución.",
+      "icon": "🎯",
+      "path": "modules/diagnostico-desvios/index.html",
       "status": "planned",
       "order": 3,
       "version": "0.0"
     },
     {
       "id": "M04",
-      "key": "flota",
-      "title": "Evaluación de Flota",
-      "description": "Análisis económico y operativo de vehículos y equipos.",
-      "icon": "🚚",
-      "path": "modules/flota/index.html",
+      "key": "predictivo",
+      "title": "Análisis Predictivo",
+      "subtitle": "Proyección de escenarios",
+      "description": "Evaluación de la evolución esperada de costos y avance a partir del comportamiento observado.",
+      "icon": "📈",
+      "path": "modules/predictivo/index.html",
       "status": "planned",
       "order": 4,
       "version": "0.0"
     },
     {
       "id": "M05",
-      "key": "control-gestion",
-      "title": "Control de Gestión",
-      "description": "Panel integral de indicadores de control de gestión de la obra.",
-      "icon": "🧭",
-      "path": "modules/control-gestion/index.html",
+      "key": "decision",
+      "title": "Decisión / Análisis de Escenarios",
+      "subtitle": "Alternativas y posibles impactos",
+      "description": "Evaluación de alternativas y posibles impactos para apoyar el análisis y la toma de decisiones.",
+      "icon": "🪧",
+      "path": "modules/decision/index.html",
       "status": "planned",
       "order": 5,
-      "version": "0.0"
-    },
-    {
-      "id": "M06",
-      "key": "gps",
-      "title": "GPS",
-      "description": "Seguimiento georreferenciado de equipos y frentes de obra.",
-      "icon": "📍",
-      "path": "modules/gps/index.html",
-      "status": "planned",
-      "order": 6,
       "version": "0.0"
     }
   ]
