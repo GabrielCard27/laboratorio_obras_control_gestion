@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel General — Control de Gestión</title>
+
+<!-- Favicon: emoji embebido, no requiere ningún archivo -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AD%3C/text%3E%3C/svg%3E">
+
+<!-- Vista previa al compartir en LinkedIn/WhatsApp/etc. — reemplazar TU-DOMINIO por el dominio real una vez desplegado en Vercel -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Laboratorio de Control de Gestión — Alumbrado Público RP16">
+<meta property="og:description" content="Panel de Control de Gestión de obras: exploración de datos, presupuestos y desvíos, en un solo lugar.">
+<meta property="og:image" content="https://TU-DOMINIO.vercel.app/assets/og-image.png">
+<meta property="og:url" content="https://TU-DOMINIO.vercel.app">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Laboratorio de Control de Gestión">
+<meta name="twitter:description" content="Panel de Control de Gestión de obras — Alumbrado Público RP16">
+<meta name="twitter:image" content="https://TU-DOMINIO.vercel.app/assets/og-image.png">
+
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/shell.css">
+</head>
+<body>
+
+<header class="shell-header">
+  <div class="shell-header-inner">
+    <div class="brand">
+      <div class="mark">🧭</div>
+      <div>
+        <h1 id="brand-title">Laboratorio de Control de Gestión</h1>
+        <div class="brand-sub">Panel General</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <b>Alumbrado Público RP16</b>
+      Panel contenedor · módulos independientes
+    </div>
+  </div>
+</header>
+
+<main class="shell-main">
+  <div id="app">
+    <section class="overview" id="overview">
+      <!-- Renderizado por shell.js a partir de config/modules.json -->
+    </section>
+
+    <div class="section-title">Módulos</div>
+    <section class="module-grid" id="module-grid">
+      <!-- Renderizado por shell.js -->
+    </section>
+  </div>
+</main>
+
+<footer class="shell-footer">
+  Panel General · cada módulo es independiente y define su propio contenido. Para agregar un módulo nuevo, ver <code>README.md</code>.
+</footer>
+
+<script src="assets/js/shell.js"></script>
+</body>
+</html>
