@@ -1,0 +1,55 @@
+/* =========================================================
+   SHELL — pertenece únicamente al Panel General.
+   Ningún módulo debe reproducir estas reglas: el shell es el
+   único responsable de header, navegación e identidad global.
+   ========================================================= */
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;}
+h1,h2,h3{margin:0;}
+p{margin:0;}
+a{color:inherit;}
+
+/* ---- header global ---- */
+.shell-header{background:var(--header-dark);color:#fff;padding:18px 24px;}
+.shell-header-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand .mark{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.brand h1{font-size:16px;font-weight:700;letter-spacing:-0.01em;}
+.brand .brand-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:1px;}
+.header-meta{text-align:right;font-size:11px;color:rgba(255,255,255,.7);}
+.header-meta b{display:block;color:#fff;font-size:12.5px;font-weight:600;}
+
+/* ---- contenedor general ---- */
+.shell-main{max-width:1200px;margin:0 auto;padding:26px 24px 50px;}
+
+/* ---- resumen / estado general ---- */
+.overview{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+@media(max-width:820px){ .overview{grid-template-columns:repeat(2,1fr);} }
+@media(max-width:480px){ .overview{grid-template-columns:1fr;} }
+.ov-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);}
+.ov-card .ov-label{font-size:11px;color:var(--text-sec);}
+.ov-card .ov-val{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--header-dark);margin-top:4px;}
+.ov-card .ov-note{font-size:10.5px;color:var(--text-sec);margin-top:2px;}
+
+/* ---- sección de módulos ---- */
+.section-title{font-size:13px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:.04em;margin-bottom:14px;}
+
+.module-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media(max-width:960px){ .module-grid{grid-template-columns:repeat(2,1fr);} }
+@media(max-width:620px){ .module-grid{grid-template-columns:1fr;} }
+
+.mcard{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-sm);text-decoration:none;transition:box-shadow .15s ease, border-color .15s ease;}
+.mcard.is-active:hover{box-shadow:var(--shadow-md);border-color:var(--primary);}
+.mcard.is-disabled{opacity:.6;cursor:default;}
+.mcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.mcard-icon{width:36px;height:36px;border-radius:8px;background:rgba(44,95,124,.08);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;}
+.mcard-id{font-family:var(--font-mono);font-size:10.5px;color:var(--text-sec);}
+.mcard h3{font-size:14.5px;font-weight:600;color:var(--text);margin-top:2px;}
+.mcard p{font-size:12px;color:var(--text-sec);line-height:1.5;flex:1;}
+.mcard-foot{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--text-sec);}
+.status-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.02em;}
+.status-pill.active{background:rgba(63,150,112,.12);color:var(--positivo);}
+.status-pill.planned{background:rgba(92,107,119,.1);color:var(--text-sec);}
+.status-pill.wip{background:rgba(226,163,61,.14);color:var(--atencion);}
+
+.shell-footer{max-width:1200px;margin:0 auto;padding:0 24px 40px;font-size:11px;color:var(--text-sec);}
