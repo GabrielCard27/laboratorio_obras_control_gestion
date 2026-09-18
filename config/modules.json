@@ -44,9 +44,9 @@
       "description": "Análisis de las variables que pueden explicar las diferencias detectadas en costos, cantidades, productividad y ejecución.",
       "icon": "🎯",
       "path": "modules/diagnostico-desvios/index.html",
-      "status": "planned",
+      "status": "active",
       "order": 3,
-      "version": "0.0"
+      "version": "1.0"
     },
     {
       "id": "M04",
