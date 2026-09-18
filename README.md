@@ -1,6 +1,8 @@
-# Laboratorio de Control de Gestión — Panel General
+# Laboratorio de Control de Gestión de Obras — Panel General
 
-Panel contenedor (shell) para módulos independientes de Control de Gestión de obra.
+Panel contenedor (shell) para el roadmap de 5 módulos "De los datos a la decisión"
+(EDA → Presupuestos y Desvíos → Diagnóstico de Desvíos → Análisis Predictivo → Decisión),
+aplicado al caso de referencia Alumbrado Público RP16.
 Sitio 100% estático: HTML + CSS + JS planos, sin build step ni framework.
 
 ## Estructura
@@ -11,9 +13,11 @@ Sitio 100% estático: HTML + CSS + JS planos, sin build step ni framework.
 /assets/css/shell.css    Estilos exclusivos del shell
 /assets/js/shell.js      Lee config/modules.json y renderiza el panel
 /config/modules.json     Registro de módulos (dato — no código)
-/modules/eda/            M01 — Exploración de Datos (activo)
-/modules/presupuestos/   M02 — Presupuestos y Desvíos (activo)
-/modules/conciliacion/   M03 — Conciliación de Bancos/Tarjetas (placeholder, sin lógica todavía)
+/modules/eda/                 M01 — EDA / Exploración de Datos (activo)
+/modules/presupuestos/        M02 — Presupuestos y Desvíos (activo)
+/modules/diagnostico-desvios/ M03 — Diagnóstico de Desvíos (placeholder, sin lógica todavía)
+/modules/predictivo/          M04 — Análisis Predictivo (placeholder, sin lógica todavía)
+/modules/decision/            M05 — Decisión / Análisis de Escenarios (placeholder, sin lógica todavía)
 ```
 
 Cada módulo es una página autocontenida (su propio `<style>`/`<script>`). El shell
@@ -41,7 +45,7 @@ Abrir `http://localhost:PORT`.
 
 No hay variables de entorno ni configuración adicional necesaria en esta etapa.
 
-## Cómo agregar un módulo nuevo (ejemplo: M04 — Evaluación de Flota)
+## Cómo agregar un módulo nuevo (ejemplo: M06 — Evaluación de Flota)
 
 1. Crear la carpeta `/modules/flota/` con su propio `index.html` (y los assets que
    necesite dentro de esa misma carpeta). No tocar `index.html` del shell ni los
@@ -49,14 +53,15 @@ No hay variables de entorno ni configuración adicional necesaria en esta etapa.
 2. Agregar la entrada correspondiente en `config/modules.json`:
    ```json
    {
-     "id": "M04",
+     "id": "M06",
      "key": "flota",
      "title": "Evaluación de Flota",
-     "description": "Análisis económico y operativo de vehículos.",
+     "subtitle": "Análisis de vehículos y equipos",
+     "description": "Análisis económico y operativo de vehículos y equipos.",
      "icon": "🚚",
      "path": "modules/flota/index.html",
      "status": "active",
-     "order": 4,
+     "order": 6,
      "version": "0.1"
    }
    ```
