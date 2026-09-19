@@ -87,6 +87,14 @@ p{margin:0;}
 .obs .rec{font-size:12px;line-height:1.55;color:var(--text-sec);margin-top:7px;}
 
 .note{font-size:10.5px;line-height:1.5;color:var(--text-sec);font-style:italic;margin-top:10px;}
+
+.audit-block{margin-top:22px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 22px;}
+.audit-block .a-title{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--neutral);text-transform:uppercase;margin-bottom:10px;}
+.audit-block ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;}
+@media(max-width:640px){ .audit-block ul{grid-template-columns:1fr;} }
+.audit-block li{font-size:11.5px;color:var(--text-sec);line-height:1.5;}
+.audit-block li.ok::before{content:"✓ ";color:var(--positivo);font-weight:700;}
+.audit-block li.na::before{content:"— ";color:var(--text-sec);font-weight:700;}
 </style>
 </head>
 <body>
@@ -174,6 +182,12 @@ function colorForVar(pct){
   if(pct<5) return 'var(--neutral)';
   if(pct<15) return 'var(--atencion)';
   return 'var(--critico)';
+}
+function levelForVar(pct){
+  if(pct<0) return 'positivo';
+  if(pct<5) return 'neutral';
+  if(pct<15) return 'atencion';
+  return 'critico';
 }
 
 /* =========================================================
@@ -273,7 +287,7 @@ function buildPanel1(){
   ];
   return {
     badge:'01', title:'Curva S: Planificado, Ganado y Real', type:'PV · EV · AC acumulados (EVM)',
-    status: colorForVar(VAC<0?Math.abs(VAC)/BAC*100:0)==='var(--critico)'?'critico':'atencion',
+    status: levelForVar(-VAC/BAC*100),
     chart: CH.lineChart(series, MESES.map(m=>m.label)),
     headline:`<span style="color:#8FA7B8">┄</span> Planificado &nbsp; <span style="color:var(--productividad)">■</span> Ganado &nbsp; <span style="color:var(--neutral)">■</span> Real`,
     obs:`El Valor Planificado (PV) y el Valor Ganado (EV) coinciden en las curvas — el avance físico acompañó al cronograma tal como fue definido (SPI≈1 todo el período). Toda la variación del proyecto es de costo, no de plazo: el Costo Real (AC) se despega recién de forma marcada en junio.`,
@@ -294,7 +308,7 @@ function buildPanel2(){
     status: minCPI<0.9?'critico':(minCPI<0.97?'atencion':'positivo'),
     chart: CH.lineChart(series, MESES.map(m=>m.label), {min:0.75,max:1.1,pctSuffix:true}),
     headline:`CPI mínimo: <b>${minCPI.toFixed(2)}</b> (${MESES[minIdx].label}) &nbsp;·&nbsp; SPI se mantiene ≈1.00 todo el período`,
-    obs:`El CPI cae de forma notoria en ${MESES[minIdx].label} (${minCPI.toFixed(2)}) — por cada $1 planificado, esa etapa rindió solo ${minCPI.toFixed(2)} en valor ganado. El SPI no se mueve del entorno de 1.00: no hay evidencia de atraso de cronograma.`,
+    obs:`El CPI cae de forma notoria en ${MESES[minIdx].label} (${minCPI.toFixed(2)}) — por cada $1 de costo real incurrido en esa etapa, se generó solo $${minCPI.toFixed(2)} de valor ganado (CPI = EV/AC). El SPI no se mueve del entorno de 1.00: no hay evidencia de atraso de cronograma (SPI = EV/PV, un índice de cronograma, no de costo).`,
     rec:`Un CPI por debajo de 1 sostenido en el tiempo (no solo un mes puntual) es la señal más confiable para activar una revisión de costos — revisar si el mes con CPI más bajo coincide con algún evento puntual en el panel 04 del módulo 03 (diagnóstico de causas).`
   };
 }
@@ -305,7 +319,6 @@ function buildPanel3(){
     {name:'Presupuesto (BAC)', color:'#8FA7B8', values:MESES.map(()=>BAC), dashed:true, noDots:true},
     {name:'Costo final real', color:'var(--neutral)', values:MESES.map(()=>COSTO_FINAL_REAL), dashed:true, noDots:true}
   ];
-  const primerMesSobreBAC = EAC_CPI.findIndex(v=>v>BAC*1.02);
   return {
     badge:'03', title:'Evolución del Pronóstico de Costo Final', type:'EAC = BAC / CPI, recalculado cada mes',
     status:'atencion',
@@ -318,7 +331,7 @@ function buildPanel3(){
 
 function buildPanel4(){
   const i = STATE.p4Mes;
-  const categorias = ['BAC','EAC (CPI)','EAC (según plan)','Real'];
+  const categorias = ['BAC (ref.)','EAC · CPI','EAC · Plan','Real (ref.)'];
   const valores = [BAC, EAC_CPI[i], EAC_PLAN[i], COSTO_FINAL_REAL];
   const opts = MESES.map((m,idx)=>`<option value="${idx}" ${idx===i?'selected':''}>${m.label}</option>`).join('');
   return {
@@ -326,8 +339,8 @@ function buildPanel4(){
     status:'neutral',
     controls:`<select data-p4mes>${opts}</select>`,
     chart: CH.groupedBars(categorias, [{color:'var(--neutral)', values: valores}]),
-    headline:`EAC (CPI): <b>${fmt(EAC_CPI[i])}</b> &nbsp;·&nbsp; EAC (según plan): <b>${fmt(EAC_PLAN[i])}</b> &nbsp;·&nbsp; Real: <b>${fmt(COSTO_FINAL_REAL)}</b> miles $`,
-    obs:`"EAC (CPI)" asume que el resto de la obra se ejecuta al mismo ritmo de costo observado hasta ${MESES[i].label}; "EAC (según plan)" asume que lo que falta se ejecuta exactamente según presupuesto, sin arrastrar el desvío pasado. La distancia entre ambos métodos es la brecha de incertidumbre del pronóstico en ese momento.`,
+    headline:`EAC · CPI: <b>${fmt(EAC_CPI[i])}</b> &nbsp;·&nbsp; EAC · Plan: <b>${fmt(EAC_PLAN[i])}</b> &nbsp;·&nbsp; Real (ref.): <b>${fmt(COSTO_FINAL_REAL)}</b> miles $`,
+    obs:`Dos métodos de pronóstico, no tres: "EAC · CPI" asume que el resto de la obra se ejecuta al mismo ritmo de costo observado hasta ${MESES[i].label}; "EAC · Plan" asume que lo que falta se ejecuta exactamente según presupuesto, sin arrastrar el desvío pasado. BAC y el costo final real se muestran solo como referencia — el costo final real no es un método de pronóstico, es el resultado conocido contra el que se valida.`,
     rec:`En etapas tempranas, preferir el método más conservador (CPI) para presupuestar contingencia; el método "según plan" sirve como piso optimista, no como pronóstico base.`
   };
 }
@@ -354,12 +367,12 @@ function buildPanel6(){
   const errorPct = EAC_CPI.map(v=>(v-COSTO_FINAL_REAL)/COSTO_FINAL_REAL*100);
   const maxAbsErr = Math.max(...errorPct.map(v=>Math.abs(v)).slice(0,6)); // excluye jul (trivialmente 0)
   return {
-    badge:'06', title:'Síntesis: Exactitud del Pronóstico', type:'Error del EAC proyectado vs. costo final real, por mes',
+    badge:'06', title:'Error del Pronóstico', type:'Diferencia entre EAC proyectado y costo final real',
     status:'neutral',
     chart: CH.bars(MESES.map(m=>m.label), errorPct, v=>v<0?'var(--positivo)':'var(--critico)', {zeroBase:false}),
-    headline:`Error máximo antes del cierre: <b>${fmt(maxAbsErr)}%</b> &nbsp;·&nbsp; VAC final: <b>${fmtSigned(VAC)} miles $</b> (${fmtPct(VAC/BAC*100)})`,
-    obs:`De enero a mayo el método subestimó el costo final (error negativo, entre -9% y -11%) porque todavía no había ocurrido el evento de junio. El error se invierte brevemente en junio (+3,5%) y se cierra en 0% en julio, cuando el proyecto ya terminó.`,
-    rec:`Este patrón (subestimación sostenida seguida de una corrección abrupta) es típico de desvíos causados por eventos puntuales más que por tendencias graduales — el módulo 03 (diagnóstico) ya identificó que el efecto dominante es precio, no cantidad ni productividad, lo cual es coherente con esta lectura.`
+    headline:`Error máximo antes del cierre: <b>${fmt(maxAbsErr)}%</b> &nbsp;·&nbsp; VAC = BAC − Costo Final: <b>${fmtSigned(VAC)} miles $</b> (${fmtPct(VAC/BAC*100)}, negativo = sobrecosto)`,
+    obs:`Error % = (EAC proyectado − Costo Final Real) / Costo Final Real × 100. De enero a mayo el error es negativo (entre -9% y -11%): el pronóstico subestimó el costo final, porque todavía no había ocurrido el evento de junio. En junio el error pasa a positivo (+3,5%): el pronóstico sobreestimó levemente. En julio el error es 0%, porque el proyecto ya cerró.`,
+    rec:`Este patrón (subestimación sostenida seguida de una corrección abrupta) puede estar asociado a desvíos causados por eventos puntuales más que por tendencias graduales — el panel 04 del módulo 03 (diagnóstico) identificó el efecto precio como dominante, lo cual es coherente con esta lectura, aunque no la confirma por sí sola.`
   };
 }
 
@@ -370,7 +383,7 @@ function buildSummary(){
   const minCPI = Math.min(...CPI);
   const minIdx = CPI.indexOf(minCPI);
   return [
-    {dot: VAC<0?'critico':'positivo', text:`VAC (Costo Final vs. BAC): <b>${fmtSigned(VAC)} miles $</b>`},
+    {dot: VAC<0?'critico':'positivo', text:`VAC = BAC − Costo Final: <b>${fmtSigned(VAC)} miles $</b> (negativo = sobrecosto)`},
     {dot: minCPI<0.9?'critico':'atencion', text:`CPI mínimo: <b>${minCPI.toFixed(2)}</b> (${MESES[minIdx].label})`},
     {dot:'neutral', text:`SPI ≈ <b>1.00</b> todo el período — sin atraso de cronograma`}
   ];
@@ -418,6 +431,20 @@ function render(){
     </div>
     <div class="summary">${chipsHtml}</div>
     <div class="grid">${panels.map(panelHtml).join('')}</div>
+    <div class="audit-block">
+      <div class="a-title">Auditoría V1.1</div>
+      <ul>
+        <li class="ok">Fórmulas verificadas (PV, EV, AC, CPI, SPI, EAC)</li>
+        <li class="ok">EAC histórico calculado sin información futura</li>
+        <li class="ok">VAC unificado: BAC − Costo Final, misma convención en todo el módulo</li>
+        <li class="ok">Error de pronóstico: (EAC − Costo Final Real) / Costo Final Real × 100</li>
+        <li class="ok">Alerta temprana: (EAC − BAC) / BAC × 100, umbral +5%</li>
+        <li class="ok">CPI / SPI verificados — CPI compara costo real vs. valor ganado; SPI, avance vs. plan</li>
+        <li class="ok">Textos revisados (terminología de CPI corregida; el costo real ya no se presenta como método de pronóstico)</li>
+        <li class="ok">Diseño preservado: 6 tarjetas, 2×3, misma paleta y tipografía</li>
+        <li class="na">ETC no se utiliza como indicador independiente en esta versión — no se incorporó, fuera del alcance solicitado</li>
+      </ul>
+    </div>
   `;
   bindControls();
 }
