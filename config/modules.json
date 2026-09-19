@@ -56,9 +56,9 @@
       "description": "Evaluación de la evolución esperada de costos y avance a partir del comportamiento observado.",
       "icon": "📈",
       "path": "modules/predictivo/index.html",
-      "status": "planned",
+      "status": "active",
       "order": 4,
-      "version": "0.0"
+      "version": "1.0"
     },
     {
       "id": "M05",
