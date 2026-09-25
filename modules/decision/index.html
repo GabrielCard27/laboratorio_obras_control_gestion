@@ -3,29 +3,459 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Decisión / Análisis de Escenarios — En construcción</title>
+<title>Decisión / Análisis de Escenarios — Alumbrado Público RP16</title>
 <link rel="icon" type="image/png" href="/favicon.png">
-<link rel="stylesheet" href="../../assets/css/tokens.css">
 <style>
-  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);}
-  .topbar{background:var(--header-dark);padding:8px 16px;}
-  .topbar a{color:#fff;opacity:.85;font-size:12px;text-decoration:none;}
-  .wrap{max-width:620px;margin:80px auto;padding:0 20px;text-align:center;}
-  .badge{display:inline-block;font-family:var(--font-mono);font-size:11px;color:var(--text-sec);border:1px solid var(--border);border-radius:20px;padding:4px 12px;margin-bottom:16px;}
-  h1{font-size:20px;margin:0 0 10px;}
-  p{color:var(--text-sec);font-size:13.5px;line-height:1.6;}
+:root{
+  --bg:#F7F8FA;
+  --surface:#FFFFFF;
+  --text:#1A2733;
+  --text-sec:#5C6B77;
+  --border:#E4E8EC;
+
+  --neutral:#2C5F7C;
+  --secondary:#8B7FE8;
+  --productividad:#16A6A3;
+  --atencion:#E2A33D;
+  --critico:#D6534A;
+  --positivo:#3F9670;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;}
+h1,h3{margin:0;color:var(--text);}
+p{margin:0;}
+
+.page{min-height:100vh;display:flex;flex-direction:column;padding:20px 20px 40px;gap:16px;max-width:1320px;margin:0 auto;}
+
+.modtag{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--neutral);text-transform:uppercase;}
+.top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-top:2px;}
+.top h1{font-size:21px;font-weight:700;letter-spacing:-0.01em;}
+.top h1 span{color:var(--neutral);}
+.top .sub{color:var(--text-sec);font-size:12.5px;margin-top:3px;}
+.top .obra{text-align:right;font-size:11px;color:var(--text-sec);}
+.top .obra b{display:block;color:var(--text);font-size:13px;font-weight:600;}
+.top .obra span{display:block;}
+
+.summary{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;}
+.summary::-webkit-scrollbar{display:none;}
+.chip{flex:none;scroll-snap-align:start;display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:8px 13px;font-size:11.5px;color:var(--text);white-space:nowrap;box-shadow:0 1px 2px rgba(16,24,32,.04);}
+.chip .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.chip b{font-weight:600;}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:760px){ .grid{grid-template-columns:1fr;gap:16px;} }
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;box-shadow:0 1px 2px rgba(16,24,32,.04), 0 2px 10px rgba(16,24,32,.05);display:flex;flex-direction:column;min-width:0;}
+.chead{display:flex;align-items:center;gap:11px;}
+.badge{flex:none;width:26px;height:26px;border-radius:6px;background:var(--neutral);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11.5px;font-weight:700;}
+.ctitle{flex:1;min-width:0;}
+.ctitle h3{font-size:16px;font-weight:600;line-height:1.25;}
+.ctitle .ctype{font-size:11.5px;color:var(--text-sec);margin-top:2px;}
+.statusdot{flex:none;width:9px;height:9px;border-radius:50%;margin-left:6px;}
+.statusdot[data-lvl="positivo"]{background:var(--positivo);}
+.statusdot[data-lvl="atencion"]{background:var(--atencion);}
+.statusdot[data-lvl="critico"]{background:var(--critico);}
+.statusdot[data-lvl="neutral"]{background:var(--neutral);}
+
+.chart-wrap{width:100%;margin-top:14px;}
+.chart-wrap svg{width:100%;height:100%;display:block;font-variant-numeric:tabular-nums;}
+
+.headline{font-size:13px;color:var(--text);margin-top:14px;font-variant-numeric:tabular-nums;}
+.headline b{font-weight:700;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+@media(max-width:420px){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
+.stat{border-top:1px solid var(--border);padding-top:7px;}
+.stat .slabel{font-size:10px;color:var(--text-sec);}
+.stat .sval{font-family:var(--font-mono);font-size:14.5px;color:var(--text);font-weight:600;margin-top:1px;}
+.stat .sval.big{font-size:17px;}
+
+.rank-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+.rank-item{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:8px;}
+.rank-num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--neutral);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);}
+.rank-body{flex:1;min-width:0;}
+.rank-title{font-size:12.5px;font-weight:600;color:var(--text);}
+.rank-desc{font-size:11.5px;color:var(--text-sec);margin-top:2px;line-height:1.45;}
+.rank-impact{flex:none;text-align:right;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--neutral);white-space:nowrap;}
+
+.obs{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+.obs .otag{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--text-sec);text-transform:uppercase;display:block;margin-bottom:4px;}
+.obs .oline{font-size:12.5px;line-height:1.55;color:var(--text);}
+.obs details{margin-top:9px;}
+.obs summary{font-size:11.5px;color:var(--neutral);font-weight:600;cursor:pointer;list-style:none;}
+.obs summary::-webkit-details-marker{display:none;}
+.obs summary::after{content:" \203A";}
+.obs details[open] summary::after{content:" \2304";}
+.obs .rec{font-size:12px;line-height:1.55;color:var(--text-sec);margin-top:7px;}
+
+.note{font-size:10.5px;line-height:1.5;color:var(--text-sec);font-style:italic;margin-top:10px;}
 </style>
 </head>
 <body>
-  <div class="topbar"><a href="../../index.html">&larr; Panel General</a></div>
-  <div class="wrap">
-    <div class="badge">M05 · v0.0 · Planificado</div>
-    <h1>Decisión / Análisis de Escenarios</h1>
-    <p>Evaluación de alternativas y posibles impactos para apoyar la toma de decisiones,
-    cerrando la secuencia Datos → Información → Conocimiento → Decisión. Todavía no tiene
-    lógica ni datos implementados. Cuando se desarrolle, se agregará aquí sin necesidad de
-    modificar el Panel General ni los demás módulos — solo se actualizará su
-    <code>status</code> en <code>config/modules.json</code>.</p>
-  </div>
+<div style="background:#16324F;padding:8px 16px;">
+  <a href="../../index.html" style="color:#fff;opacity:.85;font:12px -apple-system,sans-serif;text-decoration:none;">&larr; Panel General</a>
+</div>
+<div id="app" class="page"></div>
+
+<script>
+/* =========================================================
+   DATA — mismo dataset base que M01/M02/M03/M04: mismos 10
+   rubros, mismos montos, avances y horas mensuales de la obra
+   Alumbrado Público RP16. Se agrega el consumo mensual de
+   Luminarias LED (mismo dato ya usado en el módulo EDA) para
+   el escenario contrafactual del panel 02.
+   ========================================================= */
+const MESES = [
+  {id:'2026-01', label:'Ene 26'}, {id:'2026-02', label:'Feb 26'},
+  {id:'2026-03', label:'Mar 26'}, {id:'2026-04', label:'Abr 26'},
+  {id:'2026-05', label:'May 26'}, {id:'2026-06', label:'Jun 26'},
+  {id:'2026-07', label:'Jul 26'}
+];
+
+const RUBROS = [
+  {id:'columnas',       nombre:'Columnas',                 corto:'Columnas',   presupuesto:[0,0,5200,9100,7800,3900,0], costo:[0,0,4576,10010,8970,3510,0], avance:[0,0,20,35,30,15,0], horas:[0,0,177,481,339,187,0], cantidadReal:179.5, cantidadPresup:170},
+  {id:'luminarias',     nombre:'Luminarias LED',           corto:'Luminarias', presupuesto:[0,0,0,1700,5100,11900,15300], costo:[0,0,0,2006,4335,34272,13464], avance:[0,0,0,5,15,35,45], horas:[0,0,0,47,213,339,390], cantidadReal:344.2, cantidadPresup:340, consumoMensual:[0,0,0,17.2,52.5,115.4,159.1]},
+  {id:'cableado',       nombre:'Cableado',                 corto:'Cableado',   presupuesto:[0,0,0,6000,9000,9000,6000], costo:[0,0,0,6900,8100,10620,5100], avance:[0,0,0,20,30,30,20], horas:[0,0,0,241,484,274,269], cantidadReal:14944.5, cantidadPresup:14200},
+  {id:'tableros',       nombre:'Tableros Eléctricos',      corto:'Tableros',   presupuesto:[0,0,0,0,4000,6400,5600], costo:[0,0,0,0,4720,5440,6720], avance:[0,0,0,0,25,40,35], horas:[0,0,0,0,159,317,223], cantidadReal:14.1, cantidadPresup:13},
+  {id:'canalizaciones', nombre:'Canalizaciones',           corto:'Canaliz.',   presupuesto:[0,2800,4900,4200,2100,0,0], costo:[0,2380,5880,3696,2310,0,0], avance:[0,20,35,30,15,0,0], horas:[0,149,209,185,128,0,0], cantidadReal:5808.7, cantidadPresup:5700},
+  {id:'excavacion',     nombre:'Excavación',               corto:'Excavación', presupuesto:[2800,3200,2000,0,0,0,0], costo:[3220,2880,2360,0,0,0,0], avance:[35,40,25,0,0,0,0], horas:[142,211,88,0,0,0,0], cantidadReal:2603.9, cantidadPresup:2550},
+  {id:'hormigon',       nombre:'Hormigón',                 corto:'Hormigón',   presupuesto:[2000,3000,3000,2000,0,0,0], costo:[1800,3540,2550,2400,0,0,0], avance:[20,30,30,20,0,0,0], horas:[120,120,177,109,0,0,0], cantidadReal:480.9, cantidadPresup:470},
+  {id:'manoobra',       nombre:'Mano de Obra',             corto:'M. Obra',    presupuesto:[1600,2400,3200,3600,3600,3200,2400], costo:[1840,2160,3776,3060,4320,2816,2640], avance:[8,12,16,18,18,16,12], horas:[132,259,230,440,363,245,248], cantidadReal:1917, cantidadPresup:1850},
+  {id:'equipos',        nombre:'Equipos',                  corto:'Equipos',    presupuesto:[1200,1800,1200,2400,1800,2400,1200], costo:[900,2430,840,3000,1404,2880,1560], avance:[10,15,10,20,15,20,10], horas:[36,36,35,66,45,69,28], cantidadReal:315, cantidadPresup:290},
+  {id:'senalizacion',   nombre:'Señalización y Seguridad', corto:'Señaliz.',   presupuesto:[480,600,600,720,900,1200,1500], costo:[566,510,720,634,990,1380,1350], avance:[8,10,10,12,15,20,25], horas:[19,35,29,35,61,55,90], cantidadReal:59.8, cantidadPresup:58}
+];
+
+/* =========================================================
+   ANALYTICS y CÁLCULOS BASE — reutilizan exactamente las
+   mismas fórmulas de M02/M03/M04 (nada nuevo se inventa aquí)
+   ========================================================= */
+const A = {
+  mean(arr){ if(!arr.length) return 0; return arr.reduce((a,b)=>a+b,0)/arr.length; },
+  pearson(x,y){
+    const n=x.length; if(n<3) return 0;
+    const mx=A.mean(x), my=A.mean(y);
+    let num=0,dx=0,dy=0;
+    for(let i=0;i<n;i++){ num+=(x[i]-mx)*(y[i]-my); dx+=(x[i]-mx)**2; dy+=(y[i]-my)**2; }
+    if(dx===0||dy===0) return 0;
+    return num/Math.sqrt(dx*dy);
+  }
+};
+
+RUBROS.forEach(r=>{
+  r.presupuestoTotal = r.presupuesto.reduce((a,b)=>a+b,0);
+  r.costoTotal = r.costo.reduce((a,b)=>a+b,0);
+  r.desvioAbs = r.costoTotal - r.presupuestoTotal;
+  r.desvioPct = r.presupuestoTotal>0 ? r.desvioAbs/r.presupuestoTotal*100 : 0;
+  r.precioPresup = r.cantidadPresup>0 ? r.presupuestoTotal/r.cantidadPresup : 0;
+  r.precioReal = r.cantidadReal>0 ? r.costoTotal/r.cantidadReal : 0;
+  r.efectoCantidad = (r.cantidadReal - r.cantidadPresup) * r.precioPresup;
+  r.efectoPrecio = (r.precioReal - r.precioPresup) * r.cantidadReal;
+  const activeIdx = r.costo.map((c,i)=>c>0?i:-1).filter(i=>i>=0);
+  r.nActivo = activeIdx.length;
+  r.consistencia = A.pearson(activeIdx.map(i=>r.avance[i]), activeIdx.map(i=>r.horas[i]));
+});
+
+const BAC = RUBROS.reduce((a,r)=>a+r.presupuestoTotal,0);
+const TOTAL_COSTO = RUBROS.reduce((a,r)=>a+r.costoTotal,0);
+const TOTAL_DESVIO_ABS = TOTAL_COSTO - BAC;
+const TOTAL_DESVIO_PCT = TOTAL_DESVIO_ABS/BAC*100;
+const TOTAL_EFECTO_PRECIO = RUBROS.reduce((a,r)=>a+r.efectoPrecio,0);
+const TOTAL_EFECTO_CANTIDAD = RUBROS.reduce((a,r)=>a+r.efectoCantidad,0);
+
+function cumSum(arr){ let acc=0; return arr.map(v=>acc+=v); }
+const presMonthly = MESES.map((m,i)=>RUBROS.reduce((a,r)=>a+r.presupuesto[i],0));
+const costMonthly = MESES.map((m,i)=>RUBROS.reduce((a,r)=>a+r.costo[i],0));
+const PV = cumSum(presMonthly);
+const AC = cumSum(costMonthly);
+const avanceAcumPct = MESES.map((m,i)=>{
+  let num=0;
+  RUBROS.forEach(r=>{ let cum=0; for(let k=0;k<=i;k++) cum+=r.avance[k]; num+=r.presupuestoTotal*cum; });
+  return num/BAC;
+});
+const EV = avanceAcumPct.map(a=>BAC*a/100);
+const CPI = EV.map((ev,i)=>ev/AC[i]);
+const EAC_CPI = CPI.map(cpi=>BAC/cpi);
+
+/* =========================================================
+   ESCENARIO 1 — Luminarias sin el pico de precio de junio
+   Metodología: se sustituye el precio unitario del mes con el
+   pico (junio) por el precio ponderado de los otros tres meses
+   activos del mismo rubro (abr, may, jul). La cantidad instalada
+   NO cambia — es un dato real, no se modifica.
+   ========================================================= */
+const LUM = RUBROS.find(r=>r.id==='luminarias');
+const idxNormal = [3,4,6];
+const costoNormal = idxNormal.reduce((a,i)=>a+LUM.costo[i],0);
+const consumoNormal = idxNormal.reduce((a,i)=>a+LUM.consumoMensual[i],0);
+const PRECIO_NORMAL_LUM = costoNormal/consumoNormal;
+const COSTO_JUN_CONTRAFACTUAL = LUM.consumoMensual[5]*PRECIO_NORMAL_LUM;
+const AHORRO_ESCENARIO_LUM = LUM.costo[5]-COSTO_JUN_CONTRAFACTUAL;
+const COSTO_TOTAL_CONTRAFACTUAL = TOTAL_COSTO-AHORRO_ESCENARIO_LUM;
+const DESVIO_CONTRAFACTUAL_PCT = (COSTO_TOTAL_CONTRAFACTUAL-BAC)/BAC*100;
+
+/* =========================================================
+   ESCENARIO 2 — Sostener el ritmo de costo de mayo (CPI de mayo)
+   en vez de que caiga a 0,84 en junio. Reutiliza el EAC_CPI ya
+   calculado en el módulo 04 para el mes de mayo (índice 4):
+   EAC = BAC / CPI(mayo).
+   ========================================================= */
+const IDX_MAYO = 4;
+const EAC_SOSTENIENDO_MAYO = EAC_CPI[IDX_MAYO];
+const AHORRO_ESCENARIO_CPI = TOTAL_COSTO-EAC_SOSTENIENDO_MAYO;
+
+/* =========================================================
+   FORMATO
+   ========================================================= */
+function fmt(n){ if(n===null||n===undefined||isNaN(n)) return '—';
+  return new Intl.NumberFormat('es-AR',{maximumFractionDigits: Math.abs(n)<10? 1:0}).format(n); }
+function fmtCompact(n){
+  if(n===null||n===undefined||isNaN(n)) return '—';
+  const sign=n<0?'-':''; const abs=Math.abs(n);
+  if(abs>=1000) return sign+(abs/1000).toFixed(1).replace('.',',').replace(',0','')+'k';
+  return fmt(n);
+}
+function fmtPct(n,decimals){ if(n===null||isNaN(n)) return '—'; const d=decimals===undefined?1:decimals;
+  return (n>=0?'+':'')+n.toFixed(d)+'%'; }
+function fmtSigned(n){ return (n>=0?'+':'')+fmt(n); }
+function colorForVar(pct){
+  if(pct<0) return 'var(--positivo)';
+  if(pct<5) return 'var(--neutral)';
+  if(pct<15) return 'var(--atencion)';
+  return 'var(--critico)';
+}
+function levelForVar(pct){
+  if(pct<0) return 'positivo';
+  if(pct<5) return 'neutral';
+  if(pct<15) return 'atencion';
+  return 'critico';
+}
+
+/* =========================================================
+   CHARTS
+   ========================================================= */
+const CH = {
+  twoBar(items){
+    const W=680,H=260,M={t:16,r:16,b:34,l:16};
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    const max=Math.max(...items.map(it=>Math.abs(it.value)),1)*1.15;
+    const slot=innerW/items.length, barW=Math.min(slot*0.42,120);
+    let bars='', labels='', grid='';
+    for(let t=0;t<=2;t++){ const v=max*t/2; const y=M.t+innerH-(v/max)*innerH;
+      grid+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="var(--border)" stroke-dasharray="2,3"/>`; }
+    items.forEach((it,i)=>{
+      const cx=M.l+slot*i+slot/2;
+      const h=Math.abs(it.value)/max*innerH, y=M.t+innerH-h;
+      bars+=`<rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${h}" fill="${it.color}" rx="4"/>
+        <text x="${cx}" y="${y-10}" font-size="15" font-weight="700" text-anchor="middle" fill="${it.color}">${fmt(it.value)}</text>`;
+      labels+=`<text x="${cx}" y="${M.t+innerH+20}" font-size="11.5" text-anchor="middle" fill="var(--text-sec)">${it.label}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${grid}${bars}${labels}</svg>`;
+  },
+
+  quadrant(items){
+    // items: [{label, x, y}] — x: desvío absoluto (miles $) · y: consistencia (r, -1..1)
+    const W=680,H=340,M={t:16,r:16,b:34,l:52};
+    const innerW=W-M.l-M.r, innerH=H-M.t-M.b;
+    const xmax=Math.max(...items.map(it=>Math.abs(it.x)))*1.15;
+    const xFor=v=>M.l+(v/xmax)*innerW;
+    const yFor=v=>M.t+innerH-((v+1)/2)*innerH; // y de -1 a 1
+    let axis = `<line x1="${M.l}" y1="${yFor(0)}" x2="${W-M.r}" y2="${yFor(0)}" stroke="var(--border)"/>
+                <text x="${W-M.r}" y="${yFor(0)-6}" font-size="9.5" text-anchor="end" fill="var(--text-sec)">r = 0</text>`;
+    let pts='', labels='';
+    items.forEach(it=>{
+      const x=xFor(Math.abs(it.x)), y=yFor(it.y);
+      const c = it.y<0.15 && Math.abs(it.x)>xmax*0.15 ? 'var(--critico)' : (Math.abs(it.x)>xmax*0.3?'var(--atencion)':'var(--neutral)');
+      pts+=`<circle cx="${x}" cy="${y}" r="7" fill="${c}" opacity="0.85"/>`;
+      labels+=`<text x="${x}" y="${y-12}" font-size="10.5" text-anchor="middle" fill="var(--text)">${it.label}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">
+      <text x="${M.l+innerW/2}" y="${H-4}" font-size="10.5" text-anchor="middle" fill="var(--text-sec)">Desvío absoluto (miles $) →</text>
+      <text x="14" y="${M.t+innerH/2}" font-size="10.5" text-anchor="middle" fill="var(--text-sec)" transform="rotate(-90 14 ${M.t+innerH/2})">Consistencia avance-horas (r) →</text>
+      ${axis}${pts}${labels}
+    </svg>`;
+  },
+
+  horizontalBars(items, valueFmt){
+    const rowH=32, W=680, top=10, left=112, right=90;
+    const H = top + items.length*rowH + 10;
+    const innerW = W-left-right;
+    const maxAbs = Math.max(...items.map(it=>Math.abs(it.value)),1)*1.1;
+    let bars='';
+    items.forEach((it,i)=>{
+      const y = top + i*rowH;
+      const w = Math.abs(it.value)/maxAbs*innerW;
+      bars+=`<text x="${left-8}" y="${y+rowH/2+4}" font-size="11.5" text-anchor="end" fill="var(--text)">${it.label}</text>
+        <rect x="${left}" y="${y+7}" width="${Math.max(w,2)}" height="${rowH-16}" fill="var(--secondary)" rx="3"/>
+        <text x="${left+w+8}" y="${y+rowH/2+4}" font-size="11.5" font-weight="700" fill="var(--text)">${valueFmt(it.value)}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">${bars}</svg>`;
+  }
+};
+
+/* =========================================================
+   PANELES
+   ========================================================= */
+function buildPanel1(){
+  return {
+    badge:'01', title:'Tablero de Decisión', type:'Síntesis de los módulos 01 a 04',
+    status: levelForVar(TOTAL_DESVIO_PCT),
+    chartIsStats:true,
+    stats:[
+      {label:'Desvío total (M02)', val: fmtPct(TOTAL_DESVIO_PCT), big:true},
+      {label:'Rubro más crítico (M02/M03)', val:'Luminarias LED'},
+      {label:'Efecto dominante (M03)', val:`Precio (${fmt(Math.abs(TOTAL_EFECTO_PRECIO)/(Math.abs(TOTAL_EFECTO_PRECIO)+Math.abs(TOTAL_EFECTO_CANTIDAD))*100)}%)`},
+      {label:'CPI final (M04)', val: CPI[6].toFixed(2)},
+      {label:'VAC (M04)', val: fmtSigned(BAC-TOTAL_COSTO)+' miles $'},
+      {label:'Alerta temprana activada (M04)', val:'Jun 26'}
+    ],
+    obs:`Este tablero no agrega datos nuevos — reúne los resultados ya calculados en los módulos 01 a 04 como punto de partida para evaluar alternativas de acción.`,
+    rec:`Los paneles siguientes traducen estos hallazgos en escenarios cuantificados y una lista de acciones priorizadas.`
+  };
+}
+
+function buildPanel2(){
+  return {
+    badge:'02', title:'Escenario: Precio de Luminarias sin el Pico de Junio', type:'Contrafactual — misma cantidad instalada, precio de meses normales',
+    status:'atencion',
+    chart: CH.twoBar([
+      {label:'Costo final real', value:TOTAL_COSTO, color:'var(--critico)'},
+      {label:'Costo con precio contenido', value:COSTO_TOTAL_CONTRAFACTUAL, color:'var(--positivo)'}
+    ]),
+    headline:`Ahorro potencial estimado: <b>${fmt(AHORRO_ESCENARIO_LUM)} miles $</b> &nbsp;·&nbsp; desvío de la obra pasaría de ${fmtPct(TOTAL_DESVIO_PCT)} a <b>${fmtPct(DESVIO_CONTRAFACTUAL_PCT)}</b>`,
+    obs:`El precio unitario de Luminarias LED en junio (${fmt(LUM.costo[5]/LUM.consumoMensual[5])} miles $/u) triplica el precio observado en los otros meses activos del mismo rubro (${fmt(PRECIO_NORMAL_LUM)} miles $/u). Sosteniendo ese precio "normal" en junio, sin cambiar la cantidad instalada, el desvío total de la obra caería de +14,5% a apenas ${fmtPct(DESVIO_CONTRAFACTUAL_PCT)}.`,
+    rec:`Esto es un escenario contrafactual, no una corrección retroactiva del costo real — cuantifica el impacto de un solo factor (precio de junio) para dimensionar cuánto del desvío total depende de ese evento puntual. Investigar la causa del salto de precio (proveedor, tipo de cambio, licitación) es lo que determinaría si era evitable.`
+  };
+}
+
+function buildPanel3(){
+  const items = RUBROS.map(r=>({label:r.corto, x:r.desvioAbs, y:r.consistencia}));
+  return {
+    badge:'03', title:'Matriz de Priorización', type:'Desvío absoluto vs. consistencia avance-horas, por rubro',
+    status:'neutral',
+    chart: CH.quadrant(items),
+    obs:`Los rubros con desvío grande y baja consistencia entre avance y horas combinan alto impacto económico con un patrón mensual menos predecible — son los que más justifican una revisión detallada antes que los de alto desvío pero comportamiento consistente.`,
+    rec:`Usar esta matriz solo para ordenar prioridad de revisión, no como diagnóstico — el panel 04 del módulo 03 ya identifica la causa (precio o cantidad) de cada rubro en detalle.`
+  };
+}
+
+function buildPanel4(){
+  return {
+    badge:'04', title:'Escenario: Sostener el Ritmo de Mayo', type:'EAC recalculado con el CPI de mayo en vez del de junio',
+    status:'atencion',
+    chartIsStats:true,
+    stats:[
+      {label:'CPI real de mayo', val:CPI[4].toFixed(2)},
+      {label:'CPI real de junio', val:CPI[5].toFixed(2)},
+      {label:'Costo final real', val:fmt(TOTAL_COSTO)+' miles $'},
+      {label:'Costo proyectado sosteniendo mayo', val:fmt(EAC_SOSTENIENDO_MAYO)+' miles $', big:true},
+      {label:'Diferencia', val:fmtSigned(AHORRO_ESCENARIO_CPI)+' miles $'},
+      {label:'Diferencia %', val:fmtPct(AHORRO_ESCENARIO_CPI/BAC*100)}
+    ],
+    obs:`Si el ritmo de costo observado hasta mayo (CPI ${CPI[4].toFixed(2)}) se hubiera mantenido en junio y julio en vez de caer a ${CPI[5].toFixed(2)}, el costo final proyectado con esa información habría sido ${fmt(EAC_SOSTENIENDO_MAYO)} miles $ — ${fmt(AHORRO_ESCENARIO_CPI)} miles $ menos que el resultado real.`,
+    rec:`Esta es la misma fórmula EAC = BAC/CPI del módulo 04, aplicada con el CPI de un mes distinto — no es una nueva metodología. Sirve para dimensionar el costo de que el desempeño se deteriore un solo mes, no para estimar cuánto era evitable.`
+  };
+}
+
+function buildPanel5(){
+  const positivos = RUBROS.filter(r=>r.efectoPrecio>0);
+  const TOTAL_EFECTO_PRECIO_POS = positivos.reduce((a,r)=>a+r.efectoPrecio,0);
+  const items = [...positivos].sort((a,b)=>b.efectoPrecio-a.efectoPrecio).slice(0,6)
+    .map(r=>({label:r.corto, value:r.efectoPrecio}));
+  const top2Sum = items.slice(0,2).reduce((a,it)=>a+it.value,0);
+  return {
+    badge:'05', title:'Candidatos a Revisión de Precios', type:'Rubros con efecto precio positivo (miles $), ordenados de mayor a menor',
+    status:'neutral',
+    chart: CH.horizontalBars(items, v=>fmtSigned(v)),
+    headline:`Los primeros ${Math.min(2,items.length)} rubros concentran <b>${fmt(top2Sum/TOTAL_EFECTO_PRECIO_POS*100)}%</b> del efecto precio positivo de la obra (${fmt(TOTAL_EFECTO_PRECIO_POS)} miles $ entre los ${items.length} rubros donde el precio empujó el costo hacia arriba).`,
+    obs:`Estos son los rubros donde el desvío está explicado principalmente por precio unitario (no por cantidad ejecutada) — el tipo de desvío más directamente asociado a variaciones de mercado, tipo de cambio o condiciones contractuales. Los rubros con efecto precio negativo (precio real por debajo del presupuestado) no se muestran acá porque no son candidatos a revisión por sobreprecio.`,
+    rec:`Son los candidatos más razonables para una revisión de precios o análisis de redeterminación — a diferencia de los rubros donde el desvío es de cantidad, donde correspondería revisar alcance o mediciones en lugar de precios.`
+  };
+}
+
+function buildPanel6(){
+  const items=[
+    {n:1, t:'Revisar el precio de Luminarias LED de junio', d:'Confirmar la causa del salto de precio unitario (proveedor, tipo de cambio, licitación) — es el factor individual de mayor impacto de toda la obra.', impacto:AHORRO_ESCENARIO_LUM},
+    {n:2, t:'Bajar el umbral de alerta de CPI', d:'Un umbral más sensible que +5% (panel 05 del módulo 04) habría señalado el deterioro de costo con más margen de reacción.', impacto:AHORRO_ESCENARIO_CPI},
+    {n:3, t:'Investigar el consumo de cable de mayo', d:'Valor atípico ya detectado por IQR en el módulo 01 — confirmar si responde a recableado o pérdidas.', impacto:null},
+    {n:4, t:'Monitorear rubros de baja consistencia avance-horas', d:'Ver panel 03: rubros con horas que no acompañan al avance mes a mes ameritan seguimiento de productividad, no solo de costo.', impacto:null}
+  ];
+  const html = items.map(it=>`<div class="rank-item">
+    <div class="rank-num">${it.n}</div>
+    <div class="rank-body"><div class="rank-title">${it.t}</div><div class="rank-desc">${it.d}</div></div>
+    <div class="rank-impact">${it.impacto!==null?fmt(it.impacto)+' miles $':'—'}</div>
+  </div>`).join('');
+  return {
+    badge:'06', title:'Síntesis: Recomendaciones Priorizadas', type:'Ordenadas por impacto potencial estimado, donde es cuantificable',
+    status:'neutral',
+    chartIsList:true,
+    chart: `<div class="rank-list">${html}</div>`,
+    obs:`Las dos primeras recomendaciones tienen impacto cuantificado en los paneles 02 y 04 de este módulo; las dos últimas no se cuantifican porque no hay una forma directa de estimar su ahorro potencial con los datos disponibles — se incluyen igual porque el módulo 01 y el módulo 03 ya las señalan como puntos de atención.`,
+    rec:`Ninguna de estas recomendaciones es una conclusión causal automática — cada una requiere confirmación con información que este laboratorio no tiene (contratos, proveedores, actas de obra). Su función es ordenar por dónde empezar a mirar, no reemplazar ese análisis.`
+  };
+}
+
+/* =========================================================
+   RESUMEN EJECUTIVO
+   ========================================================= */
+function buildSummary(){
+  return [
+    {dot:'atencion', text:`Ahorro potencial máximo (escenario precio): <b>${fmt(AHORRO_ESCENARIO_LUM)} miles $</b>`},
+    {dot:'atencion', text:`Ahorro potencial (escenario ritmo de mayo): <b>${fmt(AHORRO_ESCENARIO_CPI)} miles $</b>`},
+    {dot: levelForVar(TOTAL_DESVIO_PCT), text:`Desvío real de la obra: <b>${fmtPct(TOTAL_DESVIO_PCT)}</b>`}
+  ];
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function panelHtml(p){
+  let bodyHtml;
+  if(p.chartIsStats){
+    bodyHtml = `<div class="stat-grid">${p.stats.map(s=>`<div class="stat"><div class="slabel">${s.label}</div><div class="sval ${s.big?'big':''}">${s.val}</div></div>`).join('')}</div>`;
+  } else if(p.chartIsList){
+    bodyHtml = p.chart;
+  } else {
+    const vb = p.chart.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+    const ratio = vb ? `${vb[1]}/${vb[2]}` : '2.1/1';
+    bodyHtml = `<div class="chart-wrap" style="aspect-ratio:${ratio}">${p.chart}</div>`;
+  }
+  return `<div class="card">
+    <div class="chead">
+      <div class="badge">${p.badge}</div>
+      <div class="ctitle"><h3>${p.title}</h3><div class="ctype">${p.type}</div></div>
+      <span class="statusdot" data-lvl="${p.status}"></span>
+    </div>
+    ${bodyHtml}
+    ${p.headline?`<div class="headline">${p.headline}</div>`:''}
+    <div class="obs">
+      <span class="otag">Qué se observa</span>
+      <div class="oline">${p.obs}</div>
+      <details><summary>Qué debería investigarse</summary><div class="rec">${p.rec}</div></details>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const panels=[buildPanel1(),buildPanel2(),buildPanel3(),buildPanel4(),buildPanel5(),buildPanel6()];
+  const chips = buildSummary();
+  const chipsHtml = chips.map(c=>`<div class="chip"><span class="dot" style="background:var(--${c.dot})"></span>${c.text}</div>`).join('');
+  document.getElementById('app').innerHTML = `
+    <div class="modtag">Módulo 05 · Laboratorio de Control de Gestión de Obras</div>
+    <div class="top">
+      <div>
+        <h1>Decisión / Análisis de <span>Escenarios</span></h1>
+        <div class="sub">Alternativas y posibles impactos — cierre del recorrido Datos → Información → Conocimiento → Decisión</div>
+      </div>
+      <div class="obra"><b>Alumbrado Público RP16</b><span>Ene – Jul 2026</span><span>BAC ${fmt(BAC)} miles $</span></div>
+    </div>
+    <div class="summary">${chipsHtml}</div>
+    <div class="grid">${panels.map(panelHtml).join('')}</div>
+  `;
+}
+render();
+</script>
 </body>
 </html>
