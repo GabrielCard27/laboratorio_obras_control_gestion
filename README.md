@@ -19,7 +19,7 @@ Sitio 100% estático: HTML + CSS + JS planos, sin build step ni framework.
 /modules/presupuestos/        M02 — Presupuestos y Desvíos (activo)
 /modules/diagnostico-desvios/ M03 — Diagnóstico de Desvíos (activo)
 /modules/predictivo/          M04 — Análisis Predictivo (activo)
-/modules/decision/            M05 — Decisión / Análisis de Escenarios (placeholder, sin lógica todavía)
+/modules/decision/            M05 — Decisión / Análisis de Escenarios (activo)
 ```
 
 Cada módulo es una página autocontenida (su propio `<style>`/`<script>`). El shell
