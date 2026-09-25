@@ -68,9 +68,9 @@
       "description": "Evaluación de alternativas y posibles impactos para apoyar el análisis y la toma de decisiones.",
       "icon": "🪧",
       "path": "modules/decision/index.html",
-      "status": "planned",
+      "status": "active",
       "order": 5,
-      "version": "0.0"
+      "version": "1.0"
     }
   ]
 }
